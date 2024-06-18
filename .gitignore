@@ -12,6 +12,7 @@ data/derivatives/*.docx
 data/rds/adnimerge_baseline.rds
 plots/*
 tmp/*
+libraries/cnn/*.mnc
 code/deprecated/*
 lists/deprecated/*
 conference/*
