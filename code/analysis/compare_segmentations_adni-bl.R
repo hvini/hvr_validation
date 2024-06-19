@@ -13,7 +13,7 @@ library(gtsummary)
 library(dunn.test)
 
 ## Remake plots
-ReDoPlots     <- TRUE
+ReDoPlots     <- FALSE
 ReRunSims     <- FALSE
 
 ## Read RDS objects
@@ -36,7 +36,7 @@ fpath    <- here("data/rds/adni-bl_volumes_icv-adjusted.rds")
 if (file.exists(fpath)) {
   volumes       <- read_rds(fpath)
 } else {
-  here('code/analysis/adjust_hc-hvr_adni.R') |> source()
+  here('code/analysis/adjust_hc-hvr_adni-bl.R') |> source()
 }
 
 
