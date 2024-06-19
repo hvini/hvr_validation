@@ -72,7 +72,9 @@ if (all(file.exists(fpaths), !ReRunPerms)) {
   r <- t <- dfs <- pval <- cil <- cih <-
     rep(NA, length(dxs) * length(covs) * length(mtds1) * length(msrs))
 
+  # HCv vs HVR
   cor.difs1 <- rep(NA, length(dxs) * length(covs) * length(mtds1) * n_perms)
+  # CNN vs FS
   cor.difs2 <- rep(NA, length(dxs) * length(covs))
 
   set.seed(1618)
