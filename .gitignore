@@ -11,7 +11,8 @@ data/UCSFFSX51_11_08_19_20Nov2023.csv
 data/derivatives/*.docx
 data/rds/adnimerge_baseline.rds
 data/labels_dorothee/*
-data/orig_segmentations/*
+data/orig_segmentations
+data/validation
 plots/*
 tmp/*
 libraries/cnn/*.mnc
