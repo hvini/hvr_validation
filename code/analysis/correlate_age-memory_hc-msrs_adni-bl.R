@@ -301,13 +301,16 @@ widths[1] <- 7
 for (i in seq_along(msrs)) {
   p  <- ggplot(corr.dt[MEASURE == msrs[i]], aes(DX, R, colour = ADJ)) +
     theme_classic(base_size = 12) +
-    theme(text = element_text(size = 12), legend.position = "none") +
+    theme(text = element_text(size = 12), legend.position = "bottom") +
     facet_grid(cols = vars(COVAR), scales = "free") +
     geom_hline(yintercept = 0, linetype = "dashed",
                alpha = .5, colour = cbPalette[1]) +
-    geom_errorbar(aes(ymin = CIlow, ymax = CIhigh), width = 0.2) +
-    geom_point(shape = 21, fill = "white", size = 1.5, stroke = .5) +
-    geom_text(aes(label = SIGN, y = CIhigh), size = 3, vjust = .1) +
+    geom_errorbar(aes(ymin = CIlow, ymax = CIhigh, group = ADJ), width = 0.2,
+                  position = position_dodge(width = .9)) +
+    geom_point(shape = 21, fill = "white", size = 1.5, stroke = .5,
+               position = position_dodge(width = .9)) +
+    geom_text(aes(label = SIGN, y = CIhigh), size = 2, vjust = .1,
+              position = position_dodge(width = .9)) +
     scale_colour_manual(values = cbPalette[2:6]) +
     labs(title = sprintf("Correlations: %s", msrs[i]),
          x = "TIV adjustment method",
