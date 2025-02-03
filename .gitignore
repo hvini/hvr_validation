@@ -10,9 +10,12 @@ data/UCSFFSX_11_02_15_20Nov2023.csv
 data/UCSFFSX51_11_08_19_20Nov2023.csv
 data/derivatives/*.docx
 data/rds/adnimerge_baseline.rds
+data/labels_dorothee/*
+data/orig_segmentations/*
 plots/*
 tmp/*
 libraries/cnn/*.mnc
 code/deprecated/*
 lists/deprecated/*
 conference/*
+paper_submission/*
