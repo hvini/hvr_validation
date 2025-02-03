@@ -12,6 +12,10 @@ set -ex
 
 IN_DIR=$1
 OUT_FILE=$2
+LHC=${3:-11}
+RHC=${4:-21}
+LCSF=${5:-12}
+RCSF=${6:-22}
 
 [ $# -ne 2 ] || [ ! -d $IN_DIR ] && exit 1
 
@@ -22,14 +26,14 @@ for img in $IN_DIR/*
 do
 	bname=$(basename $img .mnc)
 
-	lhc=$(print_all_labels $img | awk '/Label: 11/ {print $3}')
-	rhc=$(print_all_labels $img | awk '/Label: 21/ {print $3}')
+	lhc=$(print_all_labels $img | awk -v lhc=$LHC '/Label: lhc/ {print $3}')
+	rhc=$(print_all_labels $img | awk -v rhc=$RHC '/Label: rhc/ {print $3}')
 	[ -z $lhc ] && lhc=0
 	[ -z $rhc ] && rhc=0
 	hc=$(($lhc + $rhc))
 
-	lcsf=$(print_all_labels $img | awk '/Label: 12/ {print $3}')
-	rcsf=$(print_all_labels $img | awk '/Label: 22/ {print $3}')
+	lcsf=$(print_all_labels $img | awk -v lcsf=$LCSF '/Label: lcsf/ {print $3}')
+	rcsf=$(print_all_labels $img | awk -v rcsf=$RCSF '/Label: rcsf/ {print $3}')
 	[ -z $csf ] && lcsf=0
 	[ -z $rcsf ] && rcsf=0
 	csf=$(($lcsf + $rcsf))
