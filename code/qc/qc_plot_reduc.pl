@@ -63,9 +63,7 @@ die "$me: $outfile exists, use -clobber to overwrite\n\n" if (-e $outfile && !$o
 
 
 # make tmp dir
-
 $tmpdir = &tempdir( "$me-XXXXXXXX", TMPDIR => 1, CLEANUP => 1 );
-
 
 # resample mri and labels
 
@@ -84,7 +82,8 @@ my $tmplab = $tmpdir . "/resampled_lab.mnc";
 	'-nelements', 131, 98, 84);
 
 &do_cmd('minclookup', '-discrete',
-  '-lut', '11 1; 12 7; 21 3; 22 5',
+  #'-lut', '11 1; 12 7; 21 3; 22 5',
+  '-lut', '11 4; 12 6; 21 8; 22 13',
 	$tmplab2,$tmplab);
 
 # normalize MRI to 0..100
