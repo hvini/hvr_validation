@@ -57,7 +57,7 @@ ICBM_OUTFILE=${ICBM_OUTDIR}/comparison_cnn_manual_icbm.csv
 [ -d "$ICBM_OUTDIR" ] || mkdir $ICBM_OUTDIR
 
 ICBM_MANUAL=${ICBM}/labels
-ICBM_CNN=${ICBM}/segm/segmentations
+ICBM_CNN=${ICBM}/cnn/segmentations
 
 printf "id,hc,dice,kappa,accuracy,sensitivity,specificity\n" > $ICBM_OUTFILE
 
@@ -90,7 +90,7 @@ ADNI_OUTFILE=${ADNI_OUTDIR}/comparison_cnn_manual_adni.csv
 [ -d "$ADNI_OUTDIR" ] || mkdir $ADNI_OUTDIR
 
 ADNI_MANUAL=${ADNI}/labels_manual_src
-ADNI_CNN=${ADNI}/segm/segmentations
+ADNI_CNN=${ADNI}/cnn/segmentations
 
 printf "id,hc,dice,kappa,accuracy,sensitivity,specificity\n" > $ADNI_OUTFILE
 
