@@ -21,3 +21,7 @@ lists/deprecated/*
 conference/*
 paper_submission/*
 export/
+.README_nvim_rem
+.Renviron
+.lintr
+.nvimcomlib
