@@ -26,18 +26,40 @@ def parse_csv(file_path, has_header, header_mapping=None):
         List[Dict]: A list of dictionaries with columns as keys.
     """
     file_path = Path(file_path)
+    if not file_path.exists():
+        # Try different heurestics of potential issues
+        default_dir = Path("/app/data")
+        #The parent dir of the filename was loaded to /app/data
+        updated_path1 = default_dir / file_path.name
+
+        #2 The complete path was loaded unto /app/data
+        updated_path2 = default_dir / file_path
+
+        if updated_path1.exists():
+            file_path = updated_path1
+        elif updated_path2.exists():
+            file_path = updated_path2
+        else:
+            raise ValueError("CSV file was not found.")
+
     with file_path.open(mode='r') as csvfile:
         reader = csv.reader(csvfile)
         if has_header:
             headers = next(reader)
             # Dynamically map columns based on provided header_mapping
-            subject_col = headers.index(header_mapping["subject_id"]) \
-                if "subject_id" in header_mapping else None
-            session_col = headers.index(header_mapping["session_id"]) \
-                if "session_id" in header_mapping else None
             img_path_col = headers.index(header_mapping["input_img_path"])
-            group_col = headers.index(header_mapping["group"]) \
-                if "group" in header_mapping else None
+            try:
+                subject_col = headers.index(header_mapping["subject_id"])
+            except ValueError:
+                subject_col = None
+            try:
+                session_col = headers.index(header_mapping["session_id"])
+            except ValueError:
+                session_col = None
+            try:
+                group_col = headers.index(header_mapping["group"])
+            except ValueError:
+                group_col = None
         else:
             row = next(reader)
             num_columns = len(row)
@@ -333,13 +355,26 @@ def main(args):
             for subject in subjects:
                 input_img_path = Path(subject["input_img_path"])
                 if not input_img_path.exists():
-                    warn(
-                        f"Input image {str(input_img_path)} does not exist. "
-                        "Skipping.",
-                        UserWarning
-                    )
-                    pbar.update(1)
-                    continue
+                    # Try different heurestics of potential issues
+                    default_dir = Path("/app/data")
+                    #The parent dir of the filename was loaded to /app/data
+                    updated_path1 = default_dir / input_img_path.name
+
+                    #2 The complete path was loaded unto /app/data
+                    updated_path2 = default_dir / input_img_path
+
+                    if updated_path1.exists():
+                        input_img_path = updated_path1
+                    elif updated_path2.exists():
+                        input_img_path = updated_path2
+                    else:
+                        warn(
+                            f"Input image {str(input_img_path)} does not exist. "
+                            "Skipping.",
+                            UserWarning
+                        )
+                        pbar.update(1)
+                        continue
 
                 subject_id = subject.get("subject_id")
                 session_id = subject.get("session_id")
