@@ -15,8 +15,9 @@ data/orig_segmentations
 data/validation
 plots/*
 tmp/*
-libraries/cnn/*.mnc
+libraries/*
 code/deprecated/*
 lists/deprecated/*
 conference/*
 paper_submission/*
+export/
