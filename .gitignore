@@ -14,6 +14,7 @@ data/labels_dorothee/*
 data/orig_segmentations
 data/validation
 plots/*
+tables/
 tmp/*
 libraries/*
 code/deprecated/*
