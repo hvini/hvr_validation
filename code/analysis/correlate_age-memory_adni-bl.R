@@ -7,8 +7,8 @@ library(DescTools)
 library(ggplot2)
 library(gridExtra)
 library(ggtext)
+library(ggsignif)
 #library(ggridges)
-#library(ggsignif)
 #library(ggpubr)
 
 ## Calculate and compare correlations of HC & Age | Memory | Cognition
@@ -361,7 +361,6 @@ plot_layers.fn <- function(dt, hc, side) {
   )
 }
 
-
 for (mtd in unique(corr.lst$COEFS$METHOD)) {
   subDT <- corr.lst$COEFS[mtd, on = "METHOD"]
   plots.lst[[mtd]] <- ggplot(subDT, aes(HC, Rval)) +
@@ -370,7 +369,7 @@ for (mtd in unique(corr.lst$COEFS$METHOD)) {
       text = element_text(size = 11),
       axis.text.x = element_markdown(),
       axis.title.x = element_blank(),
-      plot.caption = element_markdown(size = 10),
+      plot.caption = element_markdown(size = 9),
       legend.position = "none"
     ) +
     facet_grid(rows = vars(DX), cols = vars(COVAR)) +
@@ -382,6 +381,24 @@ for (mtd in unique(corr.lst$COEFS$METHOD)) {
     ) +
     plot_layers.fn(subDT, "HCv", "L") +
     plot_layers.fn(subDT, "HVR", "R") +
+    geom_signif(
+      data = corr.lst$CONTR[
+        mtd, on = "METHOD",
+        .(xmin = "HCv", xmax = "HVR", y_pos = Y + .15, LABEL),
+        .(DX, COVAR)
+      ],
+      mapping = aes(
+        xmin = xmin,
+        xmax = xmax,
+        annotations = LABEL,
+        y_position = y_pos
+      ),
+      manual = TRUE,
+      colour = cbPalette[1],
+      textsize = 3,
+      extend_line = .075,
+      inherit.aes = FALSE
+    ) +
     ylim(-.65, .5) +
     scale_x_discrete(labels = plot_params.lst$X) +
     labs(
@@ -393,30 +410,6 @@ for (mtd in unique(corr.lst$COEFS$METHOD)) {
       )
     )
   }
-
-
-#GGSIGNIF
-#CNN
-geom_signif(
-  data = corr.perm.sign.dt[METHOD == "CNN"],
-  aes(xmin = HCv, xmax = HVR, annotations = LABEL, y_position = Y + .13),
-  manual = TRUE,
-  colour = cbPalette[1],
-  textsize = 3,
-  inherit.aes = FALSE
-)
-
-# MALF
-geom_signif(data = corr.perm.sign.dt[METHOD == "MALF"],
-              aes(xmin = HCv, xmax = HVR, annotations = LABEL,
-                                    y <- position = Y + .1), manual = TRUE, colour = cbPalette[1],
-              textsize = 3, inherit.aes = FALSE)
-
-# NLPB
-geom_signif(data = corr.perm.sign.dt[METHOD == "NLPB"],
-              aes(xmin = HCv, xmax = HVR, annotations = LABEL,
-                                    y <- position = Y + .13), manual = TRUE, colour = cbPalette[1],
-              textsize = 3, inherit.aes = FALSE)
 
 ## Also, figure out correct order
 p <- grid.arrange(
