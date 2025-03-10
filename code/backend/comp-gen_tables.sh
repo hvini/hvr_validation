@@ -18,10 +18,26 @@ cat << 'EOF' > $OUTPUT
 EOF
 
 # Loop through all table files (adjust the pattern as needed)
-for file in ${TABLESDIR}/adni-bl*.tex
+for file in ${TABLESDIR}/adni-bl_table-?.tex
 do
-	#echo "\section*{$title}" >> $OUTPUT
+	# Remove stub line
+	sed -i -e '/l|c/ s/|//' $file
+	# Add title
+	if [[ $file =~ ([0-9])\.tex$ ]]
+	then
+		tablenum="${BASH_REMATCH[1]}"
+		case "$tablenum" in
+			1) title="Table 1: Demographic data" ;;
+			2) title="Table 2: HCvol, HVR, and segmentation failures" ;;
+			*) title="Table $tablenum" ;;
+		esac
+		echo "\section*{$title}" >> $OUTPUT
+	fi
+
+	# Insert table
 	echo "\input{$file}" >> $OUTPUT
+
+	# Flush
 	echo "\clearpage" >> $OUTPUT
 
 	done

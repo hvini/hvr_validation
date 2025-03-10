@@ -2,7 +2,7 @@
 
 library(here)
 library(data.table)
-library(gtsummary)
+library(gt)
 library(dunn.test)
 
 ### INPUT
@@ -91,27 +91,95 @@ demog.dt[
 # 2:     AD 1.810726 1.790131
 # 3:    MCI 4.067485 2.593530
 
-# Demographics table
-demog.dt[, -1] |>
-  tbl_summary(
-    by = DX,
-    label = list(
-      PTGENDER ~ "Sex",
-      AGE ~ "Age (years)",
-      PTEDUCAT ~ "Education (years)",
-      RAVLT_learning ~ "RAVLT (learning)"
-    ),
-    statistic = all_continuous() ~ "{mean} ({sd})",
-    missing_text = "Missing"
+## Demographics table
+fname <- "adni-bl_table-1.tex"
+fpath <- here("tables")
+demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
+  melt(id = "DX", variable = "VAR") |>
+  suppressWarnings() |>
+  na.omit() |>
+  (
+    \(DT) DT[
+      ,
+      sprintf("%.1f (%.1f)", mean(value), sd(value)),
+      .(DX, VAR)
+    ]
+  )() |>
+  rbind(
+    demog.dt[
+      , lapply(.SD, \(col) sum(is.na(col))), DX, .SDcols = AGE:RAVLT_learning
+    ] |>
+      melt(id = "DX", variable = "VAR", value = "V1") |>
+      (
+        \(DT)
+        DT[V1 > 0, .(VAR = sprintf("%s_NA", substr(VAR, 1, 4)), V1), DX]
+      )(),
+    demog.dt[
+      , .N, keyby = DX
+    ][
+      demog.dt[, .N, keyby = .(DX, PTGENDER)]
+    ][
+      "Female", on = "PTGENDER",
+      .(
+        sprintf("%i (%.0f%%)", i.N, 100 * i.N /N),
+        VAR = "SEXF"
+      ),
+      DX
+    ],
+    use.names = TRUE
   ) |>
-  modify_header(label ~ "**Variable**") |>
-  modify_spanning_header(
-    c("stat_1", "stat_2", "stat_3") ~ "**Clinical Label**"
+  dcast(VAR ~ DX, value.var = "V1") |>
+  (\(DT) DT[
+    ,
+    VAR := factor(
+      VAR,
+      levels = c(
+        "SEXF",
+        "AGE",
+        "PTEDUCAT",
+        "ADAS13",
+        "ADAS_NA",
+        "RAVLT_learning",
+        "RAVL_NA"
+      ),
+      labels = c(
+        "Sex (F)",
+        "Age (years)",
+        "Education (years)",
+        "ADAS-13",
+        "NA_ADAS13",
+        "RAVLT-learning",
+        "NA_RAVLT"
+      )
+    )][order(VAR)]
+  )() |>
+  gt(rowname_col = "VAR", process_md = TRUE) |>
+  tab_spanner(label = "Clinical Label", columns = c("CH", "MCI", "AD")) |>
+  tab_options(
+    latex.tbl.pos = "h",
+    footnotes.multiline = FALSE
   ) |>
-  add_n() |>
-  add_p() |>
-  as_gt() |>
-  gt::gtsave(filename = "adni-bl_demog_table-1.tex", path = here("tables"))
+  cols_align("center", columns = c("CH", "MCI", "AD")) |>
+  cols_label(
+    CH = sprintf("**CH**, N: %i", demog.dt["CH", on = "DX", .N]) |> md(),
+    MCI = sprintf("**MCI**, N: %i", demog.dt["MCI", on = "DX", .N]) |> md(),
+    AD = sprintf("**AD**, N: %i", demog.dt["AD", on = "DX", .N]) |> md()
+  ) |>
+  tab_stub_indent(starts_with("NA"), indent = 3) |>
+  sub_values(values = c("NA_ADAS13", "NA_RAVLT"), replacement = "Missing") |>
+  tab_footnote(
+    footnote = "N (%).",
+    locations = cells_stub(rows = contains("Sex"))
+  ) |>
+  tab_footnote(
+    footnote = "N of subjects without cognitive data.",
+    locations = cells_stub(rows = contains("NA"))
+  ) |>
+  tab_footnote(
+    footnote = "Mean (SD).",
+    locations = cells_stub(rows = c(2:4, 6))
+  ) |>
+  gtsave(filename = fname, path = fpath)
 
 
 ### Post-hoc analyses

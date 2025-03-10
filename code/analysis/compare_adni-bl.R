@@ -11,9 +11,9 @@ library(gt)
 #library(dunn.test)
 
 ## Remake plots / Rerun simulations
-REDOTABLE     <- TRUE
-REDOPLOTS     <- TRUE
-RERUNSIMS     <- FALSE
+REDOTABLE     <- F
+REDOPLOTS     <- F
+RERUNSIMS     <- F
 
 fpaths <- list(
   rds = c(
@@ -74,8 +74,18 @@ data.dt <- data.dt[
     fill = TRUE
   )
 
+data.dt[
+  ,
+  METHOD := factor(
+    METHOD,
+    levels = c("MALF", "NLPB", "CNN", "FS_V4_V5", "FS_V6")
+  )
+]
+
+setorder(data.dt, DX, METHOD)
+
 ### TABLE summary
-fname <- "adni-bl_comps_table-2.tex"
+fname <- "adni-bl_table-2.tex"
 fpath <- here("tables")
 if (!file.exists(here(fpath, fname)) | REDOTABLE) {
   data.dt |>
@@ -84,7 +94,7 @@ if (!file.exists(here(fpath, fname)) | REDOTABLE) {
     {function(DT)
       DT[
         ,
-        .(value = sprintf( "%.3f (%.3f)", mean(value), sd(value))),
+        .(value = sprintf( "%.2f (%.2f)", mean(value), sd(value))),
         by = DX:variable
       ]
     }() |>
@@ -132,6 +142,11 @@ if (!file.exists(here(fpath, fname)) | REDOTABLE) {
       label = "Clinical Label",
       columns = c("CH", "MCI", "AD")
     ) |>
+    tab_options(
+      latex.tbl.pos = "h",
+      footnotes.multiline = FALSE
+    ) |>
+    cols_align("center", columns = c("CH", "MCI", "AD")) |>
     cols_label(
       CH = "**CH**, N: %i" |>
         sprintf(data.dt[!duplicated(PTID)]["CH", on = "DX", .N]) |>
