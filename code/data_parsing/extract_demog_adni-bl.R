@@ -6,20 +6,31 @@ library(gt)
 library(dunn.test)
 
 ### INPUT
-fpath         <- here("data/rds/adnimerge_baseline.rds")
-if (file.exists(fpath)) {
-  adnimerge   <- readRDS(fpath)
+fpaths <- list(
+  RDS = c("adnimerge_baseline", "adni-bl_volumes_hcvc") |>
+    sprintf(fmt = "data/rds/%s.rds") |> here(),
+  SRC = c("parse_adnimerge-bl", "qc_segmentations_adni-bl") |>
+    sprintf(fmt = "code/data_parsing/%s.R") |> here()
+)
+
+
+## ADNIMERGE baseline
+if (file.exists(fpaths$RDS[1])) {
+  adnimerge  <- readRDS(fpaths$RDS[1])
 } else {
-  here("code/data_parsing/parse_adnimerge-bl.R") |> source()
+  source(fpaths$SRC[1])
+  adnimerge <- data.lst$ADNIMERGE
+  rm(data.lst)
 }
 
-fpath         <- here("data/rds/adni-bl_volumes_hcvc.rds")
-if (file.exists(fpath)) {
-  volumes     <- readRDS(fpath)
+if (file.exists(fpaths$RDS[2])) {
+  volumes     <- readRDS(fpaths$RDS[2])
 } else {
-  here("code/data_parsing/qc_segmentations_adni-bl.R") |> source()
+  source(fpaths$SRC[2])
+  volumes <- data.lst$VOL
+  rm(data.lst)
 }
-
+rm(fpaths)
 
 ### Data CLEANING
 demog.dt      <- adnimerge[
@@ -30,6 +41,7 @@ demog.dt      <- adnimerge[
     RAVLT_learning = as.numeric(RAVLT_learning)
   )
 ]
+rm(adnimerge, volumes)
 
 ### Data EXPLORATION
 ## N
@@ -180,6 +192,8 @@ demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
     locations = cells_stub(rows = c(2:4, 6))
   ) |>
   gtsave(filename = fname, path = fpath)
+
+rm(fname, fpath)
 
 
 ### Post-hoc analyses
