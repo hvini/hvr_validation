@@ -8,72 +8,72 @@ library(ggplot2)
 library(gridExtra)
 library(ggtext)
 library(ggsignif)
-#library(ggridges)
-#library(ggpubr)
 
 ## Calculate and compare correlations of HC & Age | Memory | Cognition
 ## ADNI data CN|MCI|AD
 
 RERUNPERMS <- FALSE
 
-# Read RDS objects
+### INPUT
 fpaths <- list(
-  rds = c(
-    "adnimerge_baseline.rds",
-    #"adni-bl_volumes_freesurfer.rds",
-    "adni-bl_volumes_icv-adjusted.rds"
-  ),
-  scripts = c(
-    "data_parsing/parse_adnimerge-bl.R",
-    #"data_parsing/parse_freesurfer-vols.R",
-    "analysis/adjust_hc-hvr_adni-bl.R"
-  )
+  RDS = c(
+    "adnimerge_baseline", "adni-bl_volumes_icv-adjusted"
+  ) |> sprintf(fmt = "data/rds/%s.rds") |> here(),
+  SRC = c(
+    "data_parsing/parse_adnimerge-bl", "analysis/adjust_hc-hvr_adni-bl"
+  ) |> sprintf(fmt = "code/%s.R") |> here()
 )
 
-data.lst <- vector("list", 2)
-for (i in seq_along(data.lst)){
-  rds <- fpaths[["rds"]][i] |> sprintf(fmt = "data/rds/%s") |> here()
-  if (file.exists(rds)) {
-    data.lst[[i]] <- readRDS(rds)
-  } else {
-    fpaths[["scripts"]][i] |> sprintf(fmt = "code/%s") |> here() |> source()
-  }
+## Adnimerge baseline
+if (file.exists(fpaths$RDS[1])) {
+  adnimerge <- readRDS(fpaths$RDS[1])
+} else {
+  source(fpaths$SRC[1])
+  adnimerge <- data.lst$ADNIMERGE
+  rm(data.lst)
 }
 
-rm(i, rds, fpaths)
+## Adjusted volumes
+if (file.exists(fpaths$RDS[2])) {
+  vols.lst <- readRDS(fpaths$RDS[2])
+} else {
+  source(fpaths$SRC[2])
+  #TODO: See the output of analysis/adjust_...
+  vols.lst <- data.lst$ADJ
+  rm(data.lst)
+}
+
+data.lst <- list(ADNIMERGE = adnimerge, HC = vols.lst$STX, HVR = vols.lst$HVR)
+rm(fpaths, adnimerge, vols.lst)
 
 # Merge
-data.dt <- merge(
-  data.lst[[1]][
-    !is.na(ADAS13)
-  ][
-    !is.na(RAVLT_learning),
-    .(
-      DX,
-      AGE,
-      ADAS13,
-      RAVLT_immediate = as.numeric(RAVLT_immediate),
-      RAVLT_perc_forgetting = as.numeric(RAVLT_perc_forgetting),
-      RAVLT_learning = as.numeric(RAVLT_learning)
-    ),
-    keyby = PTID
-  ],
-  data.lst[[2]][
-    !is.na(HVR_mean),
-    .(
-      METHOD,
-      HCv_l = HC_stx_l,
-      HCv_r = HC_stx_r,
-      HCv = HC_stx_mean, # Head-size normalized
-      HVR_l,
-      HVR_r,
-      HVR = HVR_mean
-    ),
-    keyby = "PTID"
-  ]
-)
-rm(data.lst)
+data.dt <- data.lst$ADNIMERGE[
+  !is.na(ADAS13)
+][
+  !is.na(RAVLT_learning),
+  .(
+    DX,
+    AGE,
+    ADAS13,
+    RAVLT_immediate = as.numeric(RAVLT_immediate),
+    RAVLT_perc_forgetting = as.numeric(RAVLT_perc_forgetting),
+    RAVLT_learning = as.numeric(RAVLT_learning)
+  ),
+  by = PTID
+] |>
+  merge(
+    data.lst$HC[
+      ,
+      .(HCv_l = HC_l, HCv_r = HC_l, HCv = HC_mean),
+      .(PTID, METHOD)],
+    by = "PTID"
+  ) |>
+  merge(
+    data.lst$HVR[, .(HVR_l, HVR_r, HVR = HVR_mean), .(PTID, METHOD)],
+    by = c("PTID", "METHOD")
+  )
 
+rm(data.lst)
 
 ## CORRELATION | Permutation tests
 fpath <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
@@ -420,9 +420,19 @@ p <- grid.arrange(
   nrow = 2
 )
 
-fpaths <- c("png", "tiff") |>
-  sprintf(fmt = "plots/adni-bl_hcv-hvr_corrs.%s") |>
-  here()
+outdir <- here("plots")
+if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
+fpaths <- sprintf(
+  fmt = "%s/adni-bl_hcv-hvr_corrs.%s",
+  outdir,
+  c("png", "tiff")
+) |> here()
 
-ggsave(fpaths[[1]], p, width = 7, height = 7, units = "in", dpi = 600)
-ggsave(fpaths[[2]], p, width = 7, height = 7, units = "in", device = "tiff", dpi = 600)
+Map(
+  \(outfile, ext) ggsave(
+    outfile, p, width = 7, heigth = 7, units = "in", device = ext, dpi = 600
+  ),
+  fpaths, c("png", "tiff")
+)
+
+rm(outdir, fpaths)

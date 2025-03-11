@@ -10,79 +10,85 @@ library(gt)
 #library(rlang)
 #library(dunn.test)
 
-## Remake plots / Rerun simulations
-REDOTABLE     <- F
-REDOPLOTS     <- F
-RERUNSIMS     <- F
+### CONSTANTS
+REDOTABLE <- FALSE
+REDOPLOTS <- FALSE
+RERUNSIMS <- FALSE
 
+### INPUT
 fpaths <- list(
-  rds = c(
-    "adnimerge_baseline.rds",
-    "adni-bl_volumes_freesurfer.rds",
-    "adni-bl_volumes_icv-adjusted.rds"
-  ),
-  scripts = c(
-    "data_parsing/parse_adnimerge-bl.R",
-    "data_parsing/parse_freesurfer-vols.R",
-    "analysis/adjust_hc-hvr_adni-bl.R"
-  )
+  RDS = c(
+    "adnimerge_baseline",
+    "adni-bl_volumes_freesurfer",
+    "adni-bl_volumes_icv-adjusted"
+  ) |> sprintf(fmt = "data/rds/%s.rds") |> here(),
+  SRC = c(
+    "data_parsing/parse_adnimerge-bl",
+    "data_parsing/parse_freesurfer-vols",
+    "analysis/adjust_hc-hvr_adni-bl"
+  ) |> sprintf(fmt = "code/%s.R") |> here()
 )
 
-data.lst <- vector("list", 3)
-for (i in seq_along(data.lst)){
-  rds <- fpaths[["rds"]][i] |> sprintf(fmt = "data/rds/%s") |> here()
-  if (file.exists(rds)) {
-    data.lst[[i]] <- readRDS(rds)
-  } else {
-    fpaths[["scripts"]][i] |> sprintf(fmt = "code/%s") |> here() |> source()
-  }
+## Parse DATA
+## Adnimerge
+if (file.exists(fpaths$RDS[1])) {
+  adnimerge <- readRDS(fpaths$RDS[1])
+} else {
+  source(fpaths$SRC[1])
+  adnimerge <- data.lst$ADNIMERGE
+  rm(data.lst)
 }
-rm(i, rds, fpaths)
 
+## FreeSurfer volumes
+if (file.exists(fpaths$RDS[2])) {
+  fs_vols <- readRDS(fpaths$RDS[2])
+} else {
+  source(fpaths$SRC[2])
+  fs_vols <- data.lst$FS
+  rm(data.lst)
+}
+
+# Adjusted HC & HVR volumes
+if (file.exists(fpaths$RDS[3])) {
+  vols.lst <- readRDS(fpaths$RDS[3])
+} else {
+  source(fpaths$SRC[1])
+  vols.lst <- data.lst$ADJ
+  rm(data.lst)
+}
+
+data.lst <- list(
+  ADNIMERGE = adnimerge[, DX, .(PTID, SCANDATE)],
+  FS = fs_vols[!is.na(FS_ucsf), FS_ucsf, .(PTID, SCANDATE)],
+  HC = vols.lst$STX[, .(SCALEFACTOR, HC_mean), .(PTID, METHOD)],
+  HVR = vols.lst$HVR[, HVR_mean, .(PTID, METHOD)]
+)
+
+rm(fpaths, adnimerge, fs_vols, vols.lst)
 
 ### Data CLEANING
-data.dt <- data.lst[[1]][
-  data.lst[[2]],
-  on = .(PTID, SCANDATE)
-][
-  data.lst[[3]],
-  on = "PTID",
-  .(
-    PTID,
-    DX,
-    FS_V4_V5 = FS_ucsf * SCALEFACTOR / 2000,
-    METHOD = factor(
-      METHOD,
-      levels = c("cnn", "nlpb", "malf", "fs6"),
-      labels = c("CNN", "NLPB", "MALF", "FS_V6")
-    ),
-    #HC = HC_stx_l + HC_stx_r,
-    HC = HC_stx_mean,
-    HVR = HVR_mean
-  )
-]
-rm(data.lst)
+data.dt <- data.lst$ADNIMERGE |>
+  merge(data.lst$FS, all = TRUE) |>
+  merge(data.lst$HC) |>
+  merge(data.lst$HVR, by = c("PTID", "METHOD")) |>
+  (
+    \(DT)
+    DT[, let(
+      FS_ucsf = FS_ucsf * SCALEFACTOR / 2000,
+      METHOD = factor(
+        METHOD,
+        levels = c("cnn", "nlpb", "malf", "fs6"),
+        labels = c("CNN", "NLPB", "MALF", "FS_V6")
+      ),
+      SCALEFACTOR = NULL)
+    ]
+  )() |>
+  setnames(c("HC_mean", "HVR_mean"), c("HC", "HVR"))
 
-data.dt <- data.dt[
-  ,
-  .(METHOD = "FS_V4_V5", HC = FS_V4_V5),
-  .(PTID, DX)
-] |>
+data.dt <- data.dt[, .(METHOD = "FS_V4_V5", HC = FS_ucsf), .(PTID, DX)] |>
   unique() |>
-  rbind(
-    data.dt[, -"FS_V4_V5"],
-    fill = TRUE
-  )
-
-data.dt[
-  ,
-  METHOD := factor(
-    METHOD,
-    levels = c("MALF", "NLPB", "CNN", "FS_V4_V5", "FS_V6")
-  )
-]
-
-setorder(data.dt, DX, METHOD)
+  rbind(data.dt[, -"FS_ucsf"], fill = TRUE) |>
+  setorder(DX, METHOD)
 
 ### TABLE summary
 fname <- "adni-bl_table-2.tex"
@@ -245,7 +251,6 @@ cbPalette <- c(
   "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
 )
 
-
 # Diagonal plots: add mean vertical lines and effect sizes
 diag_fun  <- function(data, mapping, var, labels.dt,...) {
   ## Calculate density first to get the y-axis limits
@@ -277,10 +282,15 @@ diag_fun  <- function(data, mapping, var, labels.dt,...) {
 }
 
 # HC By DX
+outdir <- here("plots")
+if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
 for (roi in c("HC", "HVR")) {
-  fnames <- "plots/adni-bl_similarity_%s.%s" |>
-    sprintf(tolower(roi), c("png", "tiff")) |>
-    here()
+  fnames <- sprintf(
+    "%s/adni-bl_similarity_%s.%s",
+    outdir,
+    tolower(roi),
+    c("png", "tiff")
+  )
 
   if (any(!file.exists(fnames), REDOPLOTS)) {
     p <- data.dt |>
@@ -332,3 +342,4 @@ for (roi in c("HC", "HVR")) {
     dev.off()
   }
 }
+rm(roi, fnames)

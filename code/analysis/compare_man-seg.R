@@ -8,8 +8,8 @@ library(ggplot2)
 library(ggsignif)
 library(ggtext)
 
-## Remake plots
-REDOPLOTS   <- TRUE
+### CONSTANT
+REDOPLOTS <- FALSE
 
 ### INPUT
 segm.lst <- valid.lst <- list()
@@ -55,7 +55,7 @@ rm(segm, dataset, fpath)
 data.lst <- list()
 ## Trained segmentations
 Map(
-  function(Name, DT) {
+  \(Name, DT) {
     DT[, let(
       segm  = factor(Name),
       id    = factor(id),
@@ -74,7 +74,7 @@ data.lst$Training <- segm.lst |>
 
 ## Validation datasets
 Map(
-  function(Name, DT) {
+  \(Name, DT) {
     DT[, let(
       dataset = factor(Name),
       id      = factor(id),
@@ -90,7 +90,7 @@ Map(
 data.lst$Validation <- valid.lst |>
   rbindlist() |>
   rbind(segm.lst$CNN["HC", on = "ROI", -c("SEGM", "ROI")], fill = TRUE) |>
-  {function(DT) DT[is.na(DATASET), DATASET := "TRAINING"]}() |>
+  (\(DT) DT[is.na(DATASET), DATASET := "TRAINING"])() |>
   melt(id = 1:3, variable = "MSR", value = "VAL")
 rm(segm.lst, valid.lst)
 
@@ -127,7 +127,7 @@ for (roi in levels(data.lst$Training$ROI)) {
         data.lst$Training[roi, on = "ROI"][msr, on = "MSR"]
       )
     },
-      error = function(e) {
+      error = \(e) {
         cat(sprintf(
           "Error in t2way for %s - %s: %s\n", roi, msr, e$message))
         NULL
@@ -153,20 +153,20 @@ for (roi in levels(data.lst$Training$ROI)) {
         ROI = roi,
         MSR = msr,
         CONTRAST = names(posthoc$contrasts),
-        PSIHAT = posthoc$effects |> lapply(function(x) x$psihat) |> unlist(),
+        PSIHAT = posthoc$effects |> lapply(\(x) x$psihat) |> unlist(),
         CI_l = posthoc$effects |>
-          lapply(function(x) if (is.null(names(x$conf.int))) {
+          lapply(\(x) if (is.null(names(x$conf.int))) {
             x$conf.int[,1]
           } else {
             x$conf.int[1]
           }) |> unlist(),
         CI_h = posthoc$effects |>
-          lapply(function(x) if (is.null(names(x$conf.int))) {
+          lapply(\(x) if (is.null(names(x$conf.int))) {
             x$conf.int[,2]
           } else {
             x$conf.int[2]
           }) |> unlist(),
-        Pval = posthoc$effects |> lapply(function(x) x$p.value) |> unlist()
+        Pval = posthoc$effects |> lapply(\(x) x$p.value) |> unlist()
       )
       rm(identifier, posthoc)
     }
@@ -186,7 +186,7 @@ for (msr in levels(data.lst$Validation$MSR)) {
   aov_res <- tryCatch({
     t2way(VAL ~ DATASET * SIDE, data.lst$Validation[msr, on = "MSR"])
   },
-    error = function(e) {
+    error = \(e) {
       cat(sprintf("Error in t2way for %s (validation): %s\n", msr, e$message))
       NULL
   })
@@ -210,20 +210,20 @@ for (msr in levels(data.lst$Validation$MSR)) {
       ROI = "HC",
       MSR = msr,
       CONTRAST = names(posthoc$contrasts),
-      PSIHAT = posthoc$effects |> lapply(function(x) x$psihat) |> unlist(),
+      PSIHAT = posthoc$effects |> lapply(\(x) x$psihat) |> unlist(),
       CI_l = posthoc$effects |>
-        lapply(function(x) if (is.null(names(x$conf.int))) {
+        lapply(\(x) if (is.null(names(x$conf.int))) {
           x$conf.int[,1]
         } else {
           x$conf.int[1]
         }) |> unlist(),
       CI_h = posthoc$effects |>
-        lapply(function(x) if (is.null(names(x$conf.int))) {
+        lapply(\(x) if (is.null(names(x$conf.int))) {
           x$conf.int[,2]
         } else {
           x$conf.int[2]
         }) |> unlist(),
-      Pval = posthoc$effects |> lapply(function(x) x$p.value) |> unlist()
+      Pval = posthoc$effects |> lapply(\(x) x$p.value) |> unlist()
     )
     rm(posthoc)
   }
@@ -231,17 +231,15 @@ for (msr in levels(data.lst$Validation$MSR)) {
 }
 rm(pb, msr)
 
-comparisons.lst <- lapply(comparisons.lst, function(level1) {
+comparisons.lst <- lapply(comparisons.lst, \(level1) {
   Map(
-    function(name, level2) {
+    \(name, level2) {
       if (name == "ANOVA") {
         rbindlist(level2) |>
-        {function(DT)
-          DT[, P_adj := p.adjust(Pval, method = "BH", n = 2 * .N)]
-        }()
+        (\(DT) DT[, P_adj := p.adjust(Pval, method = "BH", n = 2 * .N)])()
       } else {
         rbindlist(level2) |>
-        {function(DT) DT[!CONTRAST %like% "SIDE"]}()
+        (\(DT) DT[!CONTRAST %like% "SIDE"])()
       }
     },
     names(level1),
@@ -253,7 +251,7 @@ comparisons.lst <- lapply(comparisons.lst, function(level1) {
 ## Use only PostHoc comparisons,
 ## i.e. segm/dset vs segm/dset (controlling for side)
 annotation.lst <- list(
-  Training = comparisons.lst[["Training"]][["PostHoc"]][
+  Training = comparisons.lst$Training$PostHoc[
     !MSR %like% "ACC|SPEC",
   ][
     Pval < 0.05,
@@ -273,7 +271,7 @@ annotation.lst <- list(
       lab = fcase(Pval < 0.001, "***", Pval < 0.01, "**", Pval < 0.05, "*")
     )
   ],
-  Validation = comparisons.lst[["Validation"]][["PostHoc"]][
+  Validation = comparisons.lst$Validation$PostHoc[
     !MSR %like% "ACC|SPEC",
   ][
     Pval < 0.05,
@@ -294,21 +292,21 @@ annotation.lst <- list(
 )
 
 ## Boxplot Kappas HC(VC) Training/Validation
-dsets <- c("Training", "Validation")
-exts  <- c("png", "tiff")
+outdir <- here("plots")
 fplots <- lapply(
-  dsets,
-  function(dset) dset |>
+  c("Training", "Validation"),
+  \(dset) dset |>
     tolower() |>
     substr(1, 5) |>
-    sprintf(fmt = "plots/man-seg_comp_%s.%s", exts) |>
+    sprintf(fmt = "plots/man-seg_comp_%s.%s", c("png", "tiff")) |>
     here()
 )
+if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
 
 # Different trained segmentation methods
 if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
   ## Accuracy & Specificity ~ 1.0
-  p <- data.lst[[dsets[1]]][
+  p <- data.lst$Training[
     !MSR %like% "ACC|SPEC",
     .(
       SEGM = SEGM |> factor(levels = c("CNN", "NLPB", "MALF")),
@@ -342,7 +340,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
       linewidth = 0.2
     ) +
     geom_signif(
-      data = annotation.lst[[dsets[1]]],
+      data = annotation.lst$Training,
       mapping = aes(xmin = x1, xmax = x2, annotations = lab, y_position = y),
       textsize = 3,
       vjust = .5,
@@ -387,7 +385,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
 # Validation datasets
 if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
   ## Accuracy & Specificity > .97
-  p <- data.lst[[dsets[2]]][
+  p <- data.lst$Validation[
     !MSR %like% "ACC|SPEC",
     .(
       DSET = DATASET |> factor(
@@ -424,7 +422,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
       linewidth = 0.2
     ) +
     geom_signif(
-      data = annotation.lst[[dsets[2]]],
+      data = annotation.lst$Validation,
       mapping = aes(xmin = x1, xmax = x2, annotations = lab, y_position = y),
       textsize = 3,
       vjust = .5,
@@ -487,20 +485,20 @@ for (segm in c("manual", "malf", "nlpb", "cnn")) {
     fread(drop = c("HC", "CSF")) |>
     melt(measure = patterns(HC = "HC", CSF = "CSF"), variable = "SIDE") |>
     melt(measure = patterns("(HC|CSF)"), variable = "ROI", value = "CC") |>
-    { function(DT)
-      DT[, let(
+    (\(DT) DT[
+      , let(
         ID = ID |> regexpr(pattern = "\\d{3}") |> regmatches(x = ID),
         SEGM = toupper(segm),
         SIDE = factor(SIDE, labels = c("Left", "Right")),
         ROI = factor(ROI, labels = c("Hippocampus", "Lateral Ventricles")),
         CC = CC / 1000
-      )]
-    }() |>
+      )
+    ])() |>
     setcolorder(c("ID", "SEGM"))
-  vols.lst[["Training"]][[toupper(segm)]] <- copy(DT)
+  vols.lst$Training[[toupper(segm)]] <- copy(DT)
 }
 
-vols.lst[["Validation"]] <- list()
+vols.lst$Validation <- list()
 for (dset in c("adni", "icbm")) {
   fpath     <- "data/derivatives/man-seg_volumes_hc_%s.csv" |>
     sprintf(dset) |>
@@ -515,19 +513,21 @@ for (dset in c("adni", "icbm")) {
   DT <- fpath |>
     fread(drop = "HC") |>
     melt(measure = patterns("HC"), variable = "SIDE") |>
-    { function(DT) {
-      DT[, let(
-        SEGM = fifelse(ID %like% "cnn", "CNN", "MAN"),
-        DSET = toupper(dset),
-        SIDE = factor(SIDE, labels = c("Left", "Right")),
-        ROI = "Hippocampus",
-        value = value / 1000
-      )]
+    (\(DT) {
+      DT[
+        , let(
+          SEGM = fifelse(ID %like% "cnn", "CNN", "MAN"),
+          DSET = toupper(dset),
+          SIDE = factor(SIDE, labels = c("Left", "Right")),
+          ROI = "Hippocampus",
+          value = value / 1000
+        )
+      ]
       DT[, ID := sprintf("hc_%s_(man|cnn)_", dset) |> sub("", ID)]
-    }}() |>
+    })() |>
     dcast(... ~ SEGM, value = "value") |>
     setcolorder(c("ID", "DSET"))
-  vols.lst[["Validation"]][[toupper(dset)]] <- copy(DT)
+  vols.lst$Validation[[toupper(dset)]] <- copy(DT)
 }
 rm(fpath, segm, dset, DT)
 
@@ -540,11 +540,11 @@ rm(dt1, dt2)
 
 ## Correlation plots
 fplots  <- lapply(
-  dsets,
-  function(dset) dset |>
+  c("Training", "Validation"),
+  \(dset) dset |>
     tolower() |>
     substr(1, 5) |>
-    sprintf(fmt = "plots/man-seg_corr_%s.%s", exts) |>
+    sprintf(fmt = "plots/man-seg_corr_%s.%s", c("png", "tiff")) |>
     here()
 )
 
@@ -554,7 +554,7 @@ cbPalette <- c(
 )
 
 if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
-  p <- vols.lst[[dsets[1]]] |>
+  p <- vols.lst$Training |>
     ggplot(aes(x = CC, y = MAN, colour = SEGM)) +
     theme_classic(base_size = 12) +
     theme(
@@ -617,7 +617,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
 }
 
 if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
-  p <- vols.lst[[dsets[2]]] |>
+  p <- vols.lst$Validation |>
     ggplot(aes(x = CNN, y = MAN, colour = DSET)) +
     theme_classic(base_size = 12) +
     theme(
@@ -680,11 +680,11 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
 
 ## Bland-Altman plots
 fplots  <- lapply(
-  dsets,
-  function(dset) dset |>
+  c("Training", "Validation"),
+  \(dset) dset |>
     tolower() |>
     substr(1, 5) |>
-    sprintf(fmt = "plots/man-seg_blandaltman_%s.%s", exts) |>
+    sprintf(fmt = "plots/man-seg_blandaltman_%s.%s", c("png", "tiff")) |>
     here()
 )
 
