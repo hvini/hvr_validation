@@ -54,9 +54,10 @@ data.lst <- list(
   ICC_SCL =  fread(fpaths$CSV) |> (\(DT) DT[, SCANDATE := ymd(SCANDATE)])(),
   SEGMS = volumes,
   FS = fs_vols[
-    , c("BRAIN", "UCSFFS", "FS_house", "FS_ucsf") := NULL
+    unique(volumes$PTID),
+    on = "PTID"
   ][
-    , METHOD := "fs6"
+    , let(METHOD = fifelse(FSv == 6, "fs6", paste0("fs", FSv)), FSv = NULL)
   ],
   CTRLS = adnimerge[DX == "CH", PTID]
 )
@@ -65,11 +66,36 @@ rm(fpaths, volumes, fs_vols, adnimerge)
 
 ## Merge SEGMS & FSICC & SCALE
 ## Filter QC
-data.lst$VOLS <- data.lst$SEGMS["Pass", on = "QC", -"QC"] |>
-  rbind(data.lst$FS, use.names = TRUE) |>
+#data.lst$VOLS <- data.lst$SEGMS["Pass", on = "QC", -"QC"] |>
+data.lst$VOLS <- data.lst$SEGMS |>
+  rbind(data.lst$FS[, QC := "Pass"], use.names = TRUE) |>
   merge(data.lst$ICC_SCL, by = c("PTID", "SCANDATE")) |>
-  na.omit() |>
-  (\(DT) DT[, ICC := ICC / 1000])() # Bring ICC to CC
+  # Bring ICC to CC
+  (\(DT) DT[, ICC := ICC / 1000])()
+
+## Add Failures/missing to FS
+data.lst$VOLS <- data.lst$VOLS |>
+  # Failures on FS are missing values
+  rbind(
+    data.lst$VOLS[
+      "cnn", on = "METHOD"
+    ][
+      !data.lst$VOLS["fs6", on = "METHOD"],
+      .(PTID, SCANDATE, ICC, SCALEFACTOR, METHOD = "fs6", QC = "Fail")
+    ],
+    use.names = TRUE, fill = TRUE
+  ) |>
+  # Missing values on ADNI are just missing, but still keep
+  rbind(
+    data.lst$VOLS[
+      "cnn", on = "METHOD"
+    ][
+      !data.lst$VOLS[c("fs4.3", "fs5.1"), on = "METHOD"],
+      .(PTID, SCANDATE, ICC, SCALEFACTOR, METHOD = "fs", QC = "Missing")
+    ],
+    use.names = TRUE, fill = TRUE
+  )
+
 
 ### Head-size Adjustments
 data.lst$ADJ <- list()
@@ -80,119 +106,50 @@ data.lst$ADJ <- list()
 # Scale everything to CC
 data.lst$ADJ$NAT <- rbind(
   data.lst$VOLS[
-    "fs6", on = "METHOD",
+    METHOD %like% "fs",
+    #c("fs4.3", "fs5.1", "fs6"), on = "METHOD",
     .(
+      QC,
       HC_l  = LHC  / 1000,
       HC_r  = RHC  / 1000,
       CSF_l = LCSF / 1000,
       CSF_r = RCSF / 1000
     ),
-    .(PTID, METHOD, ICC, SCALEFACTOR) #TODO: Do I need all of these?
+    .(PTID, METHOD) #TODO: Do I need all of these?
   ],
   data.lst$VOLS[
-    !"fs6", on = "METHOD",
+    !METHOD %like% "fs",
     .(
+      QC,
       HC_l  = LHC  / (SCALEFACTOR * 1000),
       HC_r  = RHC  / (SCALEFACTOR * 1000),
       CSF_l = LCSF / (SCALEFACTOR * 1000),
       CSF_r = RCSF / (SCALEFACTOR * 1000)
     ),
-    .(PTID, METHOD, ICC, SCALEFACTOR) #TODO: Do I need all of these?
+    .(PTID, METHOD) #TODO: Do I need all of these?
   ]
 )
 
-## STX
-data.lst$ADJ$STX <- rbind(
+## STX method
+data.lst$ADJ$HC <- rbind(
   data.lst$VOLS[
-    "fs6", on = "METHOD",
-    .(HC_l = LHC * SCALEFACTOR / 1000, HC_r = RHC * SCALEFACTOR / 1000),
-    .(PTID, METHOD, ICC, SCALEFACTOR) #TODO: Do I need all of these?
+    METHOD %like% "fs",
+    .(QC, HC_l = LHC * SCALEFACTOR / 1000, HC_r = RHC * SCALEFACTOR / 1000),
+    .(PTID, METHOD) #TODO: Do I need all of these?
   ],
   data.lst$VOLS[
-    !"fs6", on = "METHOD",
-    .(HC_l = LHC / 1000, HC_r = RHC / 1000),
-    .(PTID, METHOD, ICC, SCALEFACTOR)
+    !METHOD %like% "fs",
+    .(QC, HC_l = LHC / 1000, HC_r = RHC / 1000),
+    .(PTID, METHOD)
   ]
 )
 
 ## HVR
 data.lst$ADJ$HVR <- data.lst$ADJ$NAT[
-  ,
+  !is.na(CSF_l) & !is.na(CSF_r),
   .(HVR_l = HC_l  / (HC_l + CSF_l), HVR_r = HC_r / (HC_r + CSF_r)),
-  .(PTID, METHOD, ICC, SCALEFACTOR)
+  .(PTID, METHOD)
 ]
-
-## Robust methods
-## Residuals:
-## VOL_adj = VOL - b(ICC - ICC_cn)
-data.lst$ADJ$RES <- data.lst$ADJ$NAT |>
-  melt(measure = patterns("_(l|r)$"), variable = "ROI", value = "CC") |>
-  # Mean ICC (Cognitively Healthy only)
-  merge(
-    data.lst$VOLS[
-      data.lst$CTRLS,
-      on = "PTID",
-      nomatch = NULL,
-      .(ICC_ch = mean(ICC)),
-      METHOD
-    ],
-    by = "METHOD"
-  ) |>
-  # Residual slope
-  merge(
-    data.lst$ADJ$NAT[
-      data.lst$CTRLS, on = "PTID",
-      .(METHOD, ICC, HC_l, HC_r, CSF_l, CSF_r)
-    ] |>
-      melt(id = 1:2, variable = "ROI", value = "CC") |>
-      na.omit() |>
-      (\(DT) DT[
-        ,
-        .(b = summary(lm(CC ~ ICC))$coefficients[2]),
-        .(ROI, METHOD)
-      ])(),
-    by = c("METHOD", "ROI")
-  ) |>
-  # Adjustment
-  (\(DT) DT[, CC := CC - b * (ICC - ICC_ch)][, c("ICC_ch", "b") := NULL])() |>
-  dcast(... ~ ROI, value.var = "CC") |>
-  setcolorder(c("PTID", "METHOD", "ICC", "SCALEFACTOR"))
-
-
-## Power-corrected proportion:
-# VOL_adj = VOL / ICC ** b
-# b: slope of log(VOL) ~ log(ICC)
-data.lst$ADJ$PCP <- data.lst$ADJ$NAT |>
-  melt(measure = patterns("_(l|r)$"), variable = "ROI", value = "CC") |>
-  # PCP slope
-  merge(
-    data.lst$ADJ$NAT[
-      data.lst$CTRLS, on = "PTID",
-      .(METHOD, ICC, HC_l, HC_r, CSF_l, CSF_r)
-    ] |>
-      melt(id = 1:2, variable = "ROI", value = "CC") |>
-      na.omit() |>
-      (\(DT) DT[
-        ,
-        .(b = summary(lm(log(CC) ~ log(ICC)))$coefficients[2]),
-        .(ROI, METHOD)
-      ])(),
-    by = c("METHOD", "ROI")
-  ) |>
-  # Adjustment
-  (\(DT) DT[, CC := CC / ICC ** b][, b := NULL])() |>
-  dcast(... ~ ROI, value.var = "CC") |>
-  setcolorder(c("PTID", "METHOD", "ICC", "SCALEFACTOR"))
-
-# HVR (Robust)
-data.lst$ADJ[c("HVR_RES", "HVR_PCP")] <- lapply(
-  data.lst$ADJ[c("RES", "PCP")],
-  \(DT) DT[
-    ,
-    .(HVR_l = HC_l  / (HC_l + CSF_l), HVR_r = HC_r / (HC_r + CSF_r)),
-    .(PTID, METHOD, ICC, SCALEFACTOR)
-  ]
-)
 
 ## Mean by sides
 lapply(
@@ -200,7 +157,7 @@ lapply(
   \(DT) {
     # HC
     if ("HC_l" %in% names(DT)) DT[, HC_mean := (HC_l + HC_r) / 2]
-    if ("CSF_L" %in% names(DT)) DT[, CSF_mean := (CSF_l + CSF_r) / 2]
+    if ("CSF_l" %in% names(DT)) DT[, CSF_mean := (CSF_l + CSF_r) / 2]
     if ("HVR_l" %in% names(DT)) DT[, HVR_mean := (HVR_l + HVR_r) / 2]
     setkey(DT, PTID, METHOD)
   }
