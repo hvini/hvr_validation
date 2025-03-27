@@ -47,18 +47,18 @@ data.lst <- list(
   FS4 = fread(
     fpaths$CSV[1],
     # LeftHC: ST29SV; RightHC; ST88SV
-    select = c("RID", "OVERALLQC", "ST29SV", "ST88SV")
+    select = c("RID", "VISCODE", "OVERALLQC", "ST29SV", "ST88SV")
   ) |> setnames(c("ST29SV", "ST88SV"), c("LHC", "RHC")),
   FS5 = fread(
     fpaths$CSV[2],
     # LeftHC: ST29SV; RightHC; ST88SV
-    select = c("RID", "OVERALLQC", "LHIPQC", "RHIPQC", "ST29SV", "ST88SV")
-  ) |> setnames(c("ST29SV", "ST88SV"), c("LHC", "RHC")),
+    select = c("RID", "VISCODE2", "OVERALLQC", "ST29SV", "ST88SV")
+  ) |> setnames(c("VISCODE2", "ST29SV", "ST88SV"), c("VISCODE", "LHC", "RHC")),
   FS6 = merge(
     fread(
       fpaths$CSV[3],
-      select = c(1, 3, 5:7),
-      col.names = c("PTID", "DATE", "LHC", "RHC", "BRAIN"),
+      select = c(1, 3, 5:6),
+      col.names = c("PTID", "DATE", "LHC", "RHC"),
       key = c("PTID", "DATE")
     ),
     fread(
@@ -67,7 +67,7 @@ data.lst <- list(
       col.names = c("PTID", "DATE", "LCSF", "RCSF"),
       key = c("PTID", "DATE")
     )
-  )
+  ) |> setnames("DATE", "SCANDATE")
 )
 
 rm(fpaths, adnimerge, volumes)
@@ -76,14 +76,15 @@ rm(fpaths, adnimerge, volumes)
 # Calculate whole HC
 # Join with ADNIMERGE
 # Set column for FS version
-data.lst[["UCSF"]] <- Map(
+data.lst$UCSF <- Map(
   \(DT, Version_str, Version_number) {
-    DT[, let(Hippocampus = LHC + RHC, UCSFFS = Version_number)]
+    DT[, let(HC = LHC + RHC, FSv = Version_number)]
     DT[
       data.lst$ADNIMERGE[Version_str, on = "FSVERSION"],
-      on = .(RID, Hippocampus)
+      on = .(RID, HC = Hippocampus)
     ][
-      !is.na(Hippocampus), .(PTID, SCANDATE, UCSFFS, Hippocampus)
+      !is.na(HC),
+      .(PTID, VISCODE, SCANDATE, FSv, LHC, RHC, HC)
     ]
   },
   data.lst[c("FS4", "FS5")],
@@ -94,6 +95,23 @@ data.lst[["UCSF"]] <- Map(
   c(4.3, 5.1)
 ) |> rbindlist()
 
+## Duplicate subjects
+# After reviewing the data there are 6 subjects whose total HC volume
+# is exactly the same on multiple visits.
+# Their VISCODE in ADNIMERGE is BL.
+# I will keep the lateral values whose VISCODE on the CSV is scmri/sc.
+# I think I don't explore laterality in this project
+# Thus, this should not make a difference
+data.lst$UCSF <- data.lst$UCSF[
+  !data.lst$UCSF[
+    data.lst$UCSF[, .N, PTID][N > 1, PTID],
+    on = "PTID"
+  ][
+    !VISCODE %like% "sc",
+    .(PTID, VISCODE)
+  ],
+  on = .(PTID, VISCODE)
+][, -"VISCODE"]
 
 ## House FSvols
 # Calculate whole HC
@@ -101,38 +119,26 @@ data.lst[["UCSF"]] <- Map(
 data.lst$FS6 <- (
   \(DT)
   DT[
-    , FS_house := LHC + RHC
+    , let(HC = LHC + RHC, CSF = LCSF + RCSF, FSv = 6)
   ][
-    data.lst$CNN_SUBS, on = .(PTID, DATE = SCANDATE)
-  ]
+    data.lst$CNN_SUBS, on = .(PTID, SCANDATE)
+  ] |> na.omit()
 )(data.lst$FS6)
 
 ## Merge FS
-data.lst$FS <- data.lst$UCSF[
-  data.lst$FS6, on = "PTID",
-  .(
-    PTID,
-    SCANDATE = DATE,
-    LHC,
-    RHC,
-    HC = LHC + RHC,
-    LCSF,
-    RCSF,
-    CSF = LCSF + RCSF,
-    BRAIN,
-    UCSFFS,
-    FS_house,
-    FS_ucsf = Hippocampus
-  )
-] |> unique()
+data.lst$FS <- rbind(
+  data.lst$UCSF,
+  data.lst$FS6,
+  fill = TRUE
+)
 
 ## Versions
-data.lst$FS[, .N, UCSFFS]
-#    UCSFFS     N
-#     <num> <int>
-# 1:    4.3   635
-# 2:     NA   227
-# 3:    5.1   779
+data.lst$FS[, .N, FSv]
+#      FSv     N
+#    <num> <int>
+# 1:   4.3   652
+# 2:   5.1   790
+# 3:   6.0  1616
 
 ### OUTPUT
 outdir <- here("data/rds")
