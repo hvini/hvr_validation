@@ -8,6 +8,8 @@ library(ggplot2)
 library(gridExtra)
 library(ggtext)
 library(ggsignif)
+library(ggridges)
+library(ggnewscale)
 
 ## Calculate and compare correlations of HC & Age | Memory | Cognition
 ## ADNI data CN|MCI|AD
@@ -20,8 +22,8 @@ fpaths <- list(
     "adnimerge_baseline", "adni-bl_volumes_icv-adjusted"
   ) |> sprintf(fmt = "data/rds/%s.rds") |> here(),
   SRC = c(
-    "data_parsing/parse_adnimerge-bl", "analysis/adjust_hc-hvr_adni-bl"
-  ) |> sprintf(fmt = "code/%s.R") |> here()
+    "data_parsing/parse_adnimerge", "analysis/adjust_hc-hvr_adni"
+  ) |> sprintf(fmt = "code/%s-bl.R") |> here()
 )
 
 ## Adnimerge baseline
@@ -43,7 +45,7 @@ if (file.exists(fpaths$RDS[2])) {
   rm(data.lst)
 }
 
-data.lst <- list(ADNIMERGE = adnimerge, HC = vols.lst$STX, HVR = vols.lst$HVR)
+data.lst <- list(ADNIMERGE = adnimerge, HC = vols.lst$HC, HVR = vols.lst$HVR)
 rm(fpaths, adnimerge, vols.lst)
 
 # Merge
@@ -63,7 +65,7 @@ data.dt <- data.lst$ADNIMERGE[
 ] |>
   merge(
     data.lst$HC[
-      ,
+      "Pass", on = "QC",
       .(HCv_l = HC_l, HCv_r = HC_l, HCv = HC_mean),
       .(PTID, METHOD)],
     by = "PTID"
@@ -255,36 +257,42 @@ if (all(file.exists(fpath), !RERUNPERMS)) {
   corr.lst <- list(
     COEFS = params.dt,
     PERMS = perms.dt,
-    CONTR = rbind(
-      params.dt[order(HC), .(DIFF = diff(Rval)), by = .(DX, COVAR, METHOD)],
-      params.dt[
-        "HVR", on = "HC"
-      ][
-        c("cnn", "fs6"), on = "METHOD"
-      ][
-        order(METHOD),
-        .(METHOD = "CNN-FS6", DIFF = diff(Rval)),
-        by = .(DX, COVAR)
-      ],
-      use.names = TRUE
-    ) |>
-    merge(perms.dt, by = c("DX", "COVAR", "METHOD")) |>
-    (\(DT) DT[
-      ,
-      .(
-        Pval = fifelse(
-          COVAR == "Memory",
-          sum(P_diff >= DIFF) / .N,
-          sum(P_diff <= DIFF) / .N
-        )
-      ),
-      .(DX, COVAR, METHOD)
-      ][
-        Pval < 0.05,
-        LABEL := fcase(Pval < 0.001, "***", Pval < 0.01, "**", default = "*")
-      ]
-    )() |>
-    merge(params.dt[, .(Y = max(CIh)), keyby = DX:METHOD], all.x = T)
+    CONTR = params.dt[
+      order(HC),
+      .(DIFF = diff(Rval)),
+      by = .(DX, COVAR, METHOD)
+    ] |>
+      rbind(
+        params.dt[
+          "HVR", on = "HC"
+        ][
+          c("cnn", "fs6"), on = "METHOD"
+        ][
+          order(-METHOD),
+          .(METHOD = "CNN-FS6", DIFF = diff(Rval)),
+          by = .(DX, COVAR)
+        ],
+        use.names = TRUE
+      ) |>
+      merge(perms.dt, by = c("DX", "COVAR", "METHOD")) |>
+      (\(DT) DT[
+        ,
+        .(
+          Rdiff = DIFF,
+          Pval = fifelse(
+            COVAR == "Memory",
+            sum(P_diff >= DIFF) / .N,
+            sum(P_diff <= DIFF) / .N
+          )
+        ),
+        .(DX, COVAR, METHOD)
+        ][
+          Pval < 0.05,
+          LABEL := fcase(Pval < 0.001, "***", Pval < 0.01, "**", default = "*")
+        ]
+      )() |>
+      unique() |>
+      merge(params.dt[, .(Y = max(CIh)), keyby = DX:METHOD], all.x = T)
   )
   rm(params.lst, perms.lst, params.dt, perms.dt)
   saveRDS(corr.lst, fpath)
@@ -316,12 +324,12 @@ plot_layers.fn <- function(dt, hc, side) {
   plot_params.lst <- list(
     L = list(
       colour = "darkred",
-      pos_nudge = .2,
+      pos_nudge = .15,
       hjust = "right"
     ),
     R = list(
       colour = "midnightblue",
-      pos_nudge = -.2,
+      pos_nudge = -.15,
       hjust = "left"
     )
   )
@@ -355,84 +363,213 @@ plot_layers.fn <- function(dt, hc, side) {
       data = DT,
       aes(label = round(Rval, 2)),
       colour = plot_params.lst[[side]]$colour,
-      size = 2.5,
+      size = 2.2,
       hjust = plot_params.lst[[side]]$hjust
     )
   )
 }
 
+plots.lst[["CORRS"]] <- list()
 for (mtd in unique(corr.lst$COEFS$METHOD)) {
-  subDT <- corr.lst$COEFS[mtd, on = "METHOD"]
-  plots.lst[[mtd]] <- ggplot(subDT, aes(HC, Rval)) +
-    theme_classic(base_size = 11) +
-    theme(
-      text = element_text(size = 11),
-      axis.text.x = element_markdown(),
-      axis.title.x = element_blank(),
-      plot.caption = element_markdown(size = 9),
-      legend.position = "none"
-    ) +
-    facet_grid(rows = vars(DX), cols = vars(COVAR)) +
-    geom_hline(
-      yintercept = 0,
-      linetype = "dashed",
-      alpha = .5,
-      colour = cbPalette[1]
-    ) +
-    plot_layers.fn(subDT, "HCv", "L") +
-    plot_layers.fn(subDT, "HVR", "R") +
-    geom_signif(
-      data = corr.lst$CONTR[
-        mtd, on = "METHOD",
-        .(xmin = "HCv", xmax = "HVR", y_pos = Y + .15, LABEL),
-        .(DX, COVAR)
-      ],
-      mapping = aes(
-        xmin = xmin,
-        xmax = xmax,
-        annotations = LABEL,
-        y_position = y_pos
+  subDT <- corr.lst$COEFS[
+    mtd, on = "METHOD"
+  ]#[
+    #, DX_f := factor(DX, levels = c("CH", "MCI", "AD"))
+  #]
+  plots.lst[["CORRS"]][[mtd]] <- ggplot(subDT, aes(HC, Rval)) +
+  theme_classic(base_size = 11) +
+  theme(
+    text = element_text(size = 11),
+    axis.text.x = element_markdown(),
+    axis.title.x = element_blank(),
+    plot.caption = element_text(size = 8),
+    legend.position = "none"
+  ) +
+  facet_grid(rows = vars(DX), cols = vars(COVAR)) +
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    alpha = .5,
+    colour = cbPalette[1]
+  ) +
+  plot_layers.fn(subDT, "HCv", "L") +
+  plot_layers.fn(subDT, "HVR", "R") +
+  geom_signif(
+    data = corr.lst$CONTR[
+      mtd, on = "METHOD",
+      .(
+        DX = factor(DX, levels = c("CH", "MCI", "AD")),
+        xmin = "HCv",
+        xmax = "HVR",
+        y_pos = Y + .15,
+        LABEL
       ),
-      manual = TRUE,
-      colour = cbPalette[1],
-      textsize = 3,
-      extend_line = .075,
-      inherit.aes = FALSE
-    ) +
-    ylim(-.65, .5) +
-    scale_x_discrete(labels = plot_params.lst$X) +
-    labs(
-      y = "Spearman's rho",
-      caption = sprintf(
-        "**%s:** N = %i;<br>* p < 0.05; ** p < 0.01; *** p < 0.001",
-        plot_params.lst$TITLE[[mtd]],
-        plot_params.lst$N[[mtd]]
-      )
+      .(COVAR)
+    ],
+    mapping = aes(
+      xmin = xmin,
+      xmax = xmax,
+      annotations = LABEL,
+      y_position = y_pos
+    ),
+    manual = TRUE,
+    colour = cbPalette[1],
+    textsize = 3,
+    extend_line = .075,
+    inherit.aes = FALSE
+  ) +
+  ylim(-.65, .5) +
+  scale_x_discrete(labels = plot_params.lst$X) +
+  labs(
+    title = plot_params.lst$TITLE[[mtd]],
+    y = "Spearman's rho",
+    caption = sprintf(
+      "N = %i; *  p < 0.05; **  p < 0.01; ***  p < 0.001",
+      plot_params.lst$N[[mtd]]
     )
-  }
+  )
+}
 
 ## Also, figure out correct order
 p <- grid.arrange(
-  plots.lst[["cnn"]],
-  plots.lst[["malf"]],
-  plots.lst[["nlpb"]],
-  plots.lst[["fs6"]],
+  plots.lst[["CORRS"]][["malf"]],
+  plots.lst[["CORRS"]][["nlpb"]],
+  plots.lst[["CORRS"]][["cnn"]],
+  plots.lst[["CORRS"]][["fs6"]],
   nrow = 2
 )
 
 outdir <- here("plots")
 if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
 fpaths <- sprintf(
-  fmt = "%s/adni-bl_hcv-hvr_corrs.%s",
+  fmt = "%s/adni-bl_hcv-hvr_corrs_%s.%s",
   outdir,
+  "fig6",
   c("png", "tiff")
-) |> here()
+)
 
 Map(
   \(outfile, ext) ggsave(
-    outfile, p, width = 7, heigth = 7, units = "in", device = ext, dpi = 600
+    outfile, p, width = 8, height = 7, units = "in", device = ext, dpi = 600
   ),
   fpaths, c("png", "tiff")
 )
 
+rm(outdir, p, fpaths)
+
+
+### Permutation tests
+plots.lst[["PERMS"]] <- list()
+for (mtd in unique(corr.lst$PERMS$METHOD)) {
+  subDT <- corr.lst$CONTR[
+    corr.lst$PERMS[
+      mtd, on = "METHOD"
+    ],
+    on = .(DX, COVAR, METHOD)
+  ][
+    ,
+    .(
+      Rdiff,
+      Pval,
+      P_diff,
+      SIGN = Pval < 0.05
+    ),
+    .(
+      DX = factor(DX, levels = c("CH", "MCI", "AD")),
+      COVAR
+    )
+  ]
+
+  plots.lst[["PERMS"]][[mtd]] <- subDT |>
+  ggplot(aes(x = P_diff, y = DX)) +
+  theme_classic(base_size = 11) +
+  theme(
+    text = element_text(size = 11),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    plot.caption = element_text(size = 8),
+    legend.position = "none"
+  ) +
+  facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
+  scale_fill_manual(values = cbPalette[2:1]) +
+  stat_density_ridges(
+    mapping = aes(fill = factor(after_stat(quantile))),
+    data = subDT[!"Memory", on = "COVAR"],
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 0.05,
+    scale = 1
+  ) +
+  new_scale_fill() +
+  scale_fill_manual(values = cbPalette[1:2]) +
+  stat_density_ridges(
+    mapping = aes(fill = factor(after_stat(quantile))),
+    data = subset(subDT, COVAR == "Memory"),
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = 0.95,
+    scale = 1
+  ) +
+  geom_vline(
+    aes(xintercept = Rdiff, colour = SIGN, linetype = SIGN),
+    subDT[, .(Rdiff = unique(Rdiff), SIGN), .(DX, COVAR)]
+  ) +
+  scale_linetype_manual(values = c("longdash", "solid")) +
+  scale_colour_manual(values = c("black", "darkred")) +
+  geom_richtext(
+    aes(label = sprintf("<i>p</i> = %.3f", V1)),
+    subDT[, unique(Pval), .(DX, COVAR)],
+    inherit.aes = FALSE,
+    colour = "Black",
+    fill = "White",
+    alpha = .9,
+    size = 3,
+    x = 0,
+    y = -Inf,
+    vjust = -0.25
+  ) +
+  labs(
+    #title = plot_params.lst$TITLE[[mtd]],
+    x = expression("Difference of " * rho),
+    y = NULL,
+    caption = paste(
+      "Permutation test using 10,000 repetitions.",
+      "Contrasts: Age & Cognition: HCv > HVR; Memory: HCv < HVR."
+    )
+  )
+}
+rm(mtd, subDT)
+
+outdir <- here("plots")
+if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
+fpaths <- corr.lst$PERMS$METHOD |>
+  unique() |>
+  tolower() |>
+  Map(
+    f = \(f, fig) ifelse(
+      grepl("cnn-fs6", f),
+      sprintf("%s/adni-bl_hvr_corrs_perms_%s_%s", outdir, f, fig),
+      sprintf("%s/adni-bl_hcv-hvr_corrs_perms_%s_%s", outdir, f, fig)
+    ),
+    paste0("sup-fig", 4:8)
+  )
+
+Map(
+  \(p, outfile) {
+    for (ext in c("png", "tiff")) {
+      outpath <- sprintf("%s.%s", outfile, ext)
+      ggsave(
+        outpath,
+        p,
+        width = 8,
+        height = 7,
+        units = "in",
+        device = ext,
+        dpi = 600
+      )
+    }
+  },
+  plots.lst[["PERMS"]],
+  fpaths
+)
 rm(outdir, fpaths)

@@ -11,26 +11,20 @@ library(gt)
 #library(dunn.test)
 
 ### CONSTANTS
-REDOTABLE <- FALSE
+REDOTABLE <- TRUE
 REDOPLOTS <- FALSE
 RERUNSIMS <- FALSE
 
 ### INPUT
 fpaths <- list(
-  RDS = c(
-    "adnimerge_baseline",
-    "adni-bl_volumes_freesurfer",
-    "adni-bl_volumes_icv-adjusted"
-  ) |> sprintf(fmt = "data/rds/%s.rds") |> here(),
-  SRC = c(
-    "data_parsing/parse_adnimerge-bl",
-    "data_parsing/parse_freesurfer-vols",
-    "analysis/adjust_hc-hvr_adni-bl"
-  ) |> sprintf(fmt = "code/%s.R") |> here()
+  RDS = c("adnimerge_baseline", "adni-bl_volumes_icv-adjusted") |>
+    sprintf(fmt = "data/rds/%s.rds") |> here(),
+  SRC = c("data_parsing/parse_adnimerge", "analysis/adjust_hc-hvr_adni") |>
+    sprintf(fmt = "code/%s-bl.R") |> here()
 )
 
 ## Parse DATA
-## Adnimerge
+# Adnimerge
 if (file.exists(fpaths$RDS[1])) {
   adnimerge <- readRDS(fpaths$RDS[1])
 } else {
@@ -39,69 +33,56 @@ if (file.exists(fpaths$RDS[1])) {
   rm(data.lst)
 }
 
-## FreeSurfer volumes
+# Adjusted HC & HVR volumes
 if (file.exists(fpaths$RDS[2])) {
-  fs_vols <- readRDS(fpaths$RDS[2])
+  vols.lst <- readRDS(fpaths$RDS[2])
 } else {
   source(fpaths$SRC[2])
-  fs_vols <- data.lst$FS
-  rm(data.lst)
-}
-
-# Adjusted HC & HVR volumes
-if (file.exists(fpaths$RDS[3])) {
-  vols.lst <- readRDS(fpaths$RDS[3])
-} else {
-  source(fpaths$SRC[1])
   vols.lst <- data.lst$ADJ
   rm(data.lst)
 }
 
 data.lst <- list(
-  ADNIMERGE = adnimerge[, DX, .(PTID, SCANDATE)],
-  FS = fs_vols[!is.na(FS_ucsf), FS_ucsf, .(PTID, SCANDATE)],
-  HC = vols.lst$STX[, .(SCALEFACTOR, HC_mean), .(PTID, METHOD)],
+  ADNIMERGE = adnimerge[, DX, PTID],
+  HC = vols.lst$HC[, .(QC, HC_mean), .(PTID, METHOD)],
   HVR = vols.lst$HVR[, HVR_mean, .(PTID, METHOD)]
 )
 
-rm(fpaths, adnimerge, fs_vols, vols.lst)
+rm(fpaths, adnimerge, vols.lst)
 
 ### Data CLEANING
 data.dt <- data.lst$ADNIMERGE |>
-  merge(data.lst$FS, all = TRUE) |>
   merge(data.lst$HC) |>
-  merge(data.lst$HVR, by = c("PTID", "METHOD")) |>
+  merge(data.lst$HVR, by = c("PTID", "METHOD"), all.x = TRUE) |>
   (
     \(DT)
-    DT[, let(
-      FS_ucsf = FS_ucsf * SCALEFACTOR / 2000,
-      METHOD = factor(
-        METHOD,
-        levels = c("cnn", "nlpb", "malf", "fs6"),
-        labels = c("CNN", "NLPB", "MALF", "FS_V6")
-      ),
-      SCALEFACTOR = NULL)
+    DT[
+      , let(
+        METHOD = factor(
+          METHOD,
+          levels = c("malf", "nlpb", "cnn", paste0("fs", c("", 4.3, 5.1, 6))),
+          labels = c("MALF", "NLPB", "CNN", rep("FS_V4_V5", 3), "FS_V6")
+        ),
+        HC_mean = fifelse(QC == "Pass", HC_mean, NA),
+        HVR_mean = fifelse(QC == "Pass", HVR_mean, NA)
+      )
     ]
   )() |>
-  setnames(c("HC_mean", "HVR_mean"), c("HC", "HVR"))
-
-data.dt <- data.dt[, .(METHOD = "FS_V4_V5", HC = FS_ucsf), .(PTID, DX)] |>
-  unique() |>
-  rbind(data.dt[, -"FS_ucsf"], fill = TRUE) |>
+  setnames(c("HC_mean", "HVR_mean"), c("HC", "HVR")) |>
   setorder(DX, METHOD)
 
 ### TABLE summary
 fname <- "adni-bl_table-2.tex"
 fpath <- here("tables")
 if (!file.exists(here(fpath, fname)) | REDOTABLE) {
-  data.dt |>
+  data.dt[, -"QC"] |>
     melt(measure = c("HC", "HVR")) |>
     na.omit() |>
     {function(DT)
       DT[
         ,
         .(value = sprintf( "%.2f (%.2f)", mean(value), sd(value))),
-        by = DX:variable
+        by = METHOD:variable
       ]
     }() |>
     rbind(
@@ -149,8 +130,8 @@ if (!file.exists(here(fpath, fname)) | REDOTABLE) {
       columns = c("CH", "MCI", "AD")
     ) |>
     tab_options(
-      latex.tbl.pos = "h",
-      footnotes.multiline = FALSE
+      footnotes.multiline = FALSE,
+      latex.tbl.pos = "h"
     ) |>
     cols_align("center", columns = c("CH", "MCI", "AD")) |>
     cols_label(
@@ -165,16 +146,18 @@ if (!file.exists(here(fpath, fname)) | REDOTABLE) {
         md()
     ) |>
     tab_stub_indent(rows = everything(), indent = 2) |>
+    sub_missing(missing_text = "-") |>
+  #tab_footnote(footnote = "Notes:") |>
     tab_footnote(
-      footnote = "Mean (standard deviation).",
+      footnote = "Mean (SD).",
       locations = cells_stub(rows = contains("H"))
     ) |>
     tab_footnote(
-      footnote = "Number of failed segmentations.",
+      footnote = "N of failed segmentations.",
       locations = cells_stub(rows = matches("Failures"))
     ) |>
     tab_footnote(
-      footnote = "Number of unreported cases from ADNI.",
+      footnote = "N of unreported cases from ADNI.",
       locations = cells_stub(rows = matches("Missing"))
     ) |>
     gtsave(filename = fname, path = fpath)
@@ -183,13 +166,11 @@ rm(fname, fpath)
 
 
 ### EFFECT sizes
-# HC volume (sum of sides??)
-# HVR (average of sides)
-
 # CH vs AD
 # Glass' delta (CH sd only)
 mtds  <- data.dt[, levels(METHOD)] # FS_V4_V5 does not have HVR
 dxs   <- data.dt[, levels(DX)][-2] # Focus on CH-AD difference
+data.dt <- data.dt["Pass", on = "QC", -"QC"]
 effsizes.lst <- list()
 for (roi in c("HC", "HVR")) {
   fnames <- "%s/adni-bl_effect-sizes_%s_dx%s.rds" |>
@@ -284,15 +265,20 @@ diag_fun  <- function(data, mapping, var, labels.dt,...) {
 # HC By DX
 outdir <- here("plots")
 if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
-for (roi in c("HC", "HVR")) {
-  fnames <- sprintf(
-    "%s/adni-bl_similarity_%s.%s",
-    outdir,
-    tolower(roi),
-    c("png", "tiff")
-  )
+rm(outdir)
+fplots <- Map(
+  \(roi, fig) roi |>
+    tolower() |>
+    substr(1, 5) |>
+    paste(fig, sep = "_") |>
+    sprintf(fmt = "plots/adni-bl_similarity_%s.%s", c("png", "tiff")) |>
+    here(),
+  c("HC", "HVR"),
+  c("fig4", "fig5")
+)
 
-  if (any(!file.exists(fnames), REDOPLOTS)) {
+for (roi in c("HC", "HVR")) {
+  if (any(!file.exists(fplots[[roi]]), REDOPLOTS)) {
     p <- data.dt |>
       melt(id = c("PTID", "DX", "METHOD")) |>
       (\(DT) DT[roi, on = "variable", -"variable"])() |>
@@ -318,9 +304,9 @@ for (roi in c("HC", "HVR")) {
       scale_colour_manual(values = cbPalette[c(2:3, 8)])
   }
 
-  if (any(!file.exists(fnames[1]), REDOPLOTS)) {
+  if (any(!file.exists(fplots[[roi]][1]), REDOPLOTS)) {
     png(
-      fnames[1],
+      fplots[[roi]][1],
       width = ifelse(roi == "HC", 8, 7),
       height = ifelse(roi == "HC", 6, 5),
       units = "in",
@@ -330,9 +316,9 @@ for (roi in c("HC", "HVR")) {
     dev.off()
   }
 
-  if (any(!file.exists(fnames[2]), REDOPLOTS)) {
+  if (any(!file.exists(fplots[[roi]][2]), REDOPLOTS)) {
     tiff(
-      fnames[2],
+      fplots[[roi]][2],
       width = ifelse(roi == "HC", 8, 7),
       height = ifelse(roi == "HC", 6, 5),
       units = "in",
@@ -342,4 +328,4 @@ for (roi in c("HC", "HVR")) {
     dev.off()
   }
 }
-rm(roi, fnames)
+rm(roi, fplots)

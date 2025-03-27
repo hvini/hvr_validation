@@ -106,6 +106,7 @@ demog.dt[
 ## Demographics table
 fname <- "adni-bl_table-1.tex"
 fpath <- here("tables")
+if (!file.exists(fpath)) dir.create(fpath)
 demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
   melt(id = "DX", variable = "VAR") |>
   suppressWarnings() |>
@@ -168,8 +169,8 @@ demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
   gt(rowname_col = "VAR", process_md = TRUE) |>
   tab_spanner(label = "Clinical Label", columns = c("CH", "MCI", "AD")) |>
   tab_options(
-    latex.tbl.pos = "h",
-    footnotes.multiline = FALSE
+    footnotes.multiline = FALSE,
+    latex.tbl.pos = "h"
   ) |>
   cols_align("center", columns = c("CH", "MCI", "AD")) |>
   cols_label(
@@ -179,6 +180,7 @@ demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
   ) |>
   tab_stub_indent(starts_with("NA"), indent = 3) |>
   sub_values(values = c("NA_ADAS13", "NA_RAVLT"), replacement = "Missing") |>
+  #tab_footnote(footnote = "Notes:") |>
   tab_footnote(
     footnote = "N (%).",
     locations = cells_stub(rows = contains("Sex"))
