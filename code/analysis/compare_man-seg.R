@@ -10,7 +10,7 @@ library(ggsignif)
 library(ggtext)
 
 ### CONSTANT
-REDOPLOTS <- FALSE
+REDOPLOTS <- TRUE
 
 ### INPUT
 segm.lst <- valid.lst <- list()
@@ -286,7 +286,7 @@ fpath <- here("tables")
 if (!file.exists(fpath)) dir.create(fpath)
 ## Cross-validation
 # Median & SD - Hippocampus & Ventricles
-fname <- "man-seg_sup-table-1.tex"
+fname <- "table-s1_man-seg_hcv-hvr_cv.tex"
 data.lst$Training[
   ,
   .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
@@ -308,7 +308,7 @@ data.lst$Training[
   gtsave(filename = fname, path = fpath)
 
 # Repeated measures ANOVA
-fname <- "man-seg_sup-table-2.tex"
+fname <- "table-s2_man-seg_anova_cv.tex"
 comparisons.lst$Training$ANOVA[
   order(MSR),
   .(
@@ -336,7 +336,7 @@ comparisons.lst$Training$ANOVA[
   gtsave(filename = fname, path = fpath)
 
 # Posthoc (Sides)
-fname <- "man-seg_sup-table-3.tex"
+fname <- "table-s3_man-seg_posthoc_cv_side.tex"
 comparisons.lst$Training$PostHoc[
   substr(G1, 1, 1) == substr(G2, 1, 1),
   .(
@@ -462,7 +462,7 @@ subDT <- comparisons.lst$Training$PostHoc[substr(G1,1,1) != substr(G2,1,1)] |>
   setcolorder(c(1:3, 5, 7, 9))
 
 # Overall agreement (Accuracy, Dice & Kappa)
-fname <- "man-seg_sup-table-4.tex"
+fname <- "table-s4_man-seg_posthoc_cv_segm1.tex"
 subDT[!MSR %like% "S"] |>
   gt(
     rowname_col = "CONTRAST",
@@ -470,7 +470,9 @@ subDT[!MSR %like% "S"] |>
     #row_group_as_column = T,
     process_md = TRUE
   ) |>
-  tab_options(latex.tbl.pos = "h") |>
+  tab_options(
+    latex.tbl.pos = "h"
+  ) |>
   #tab_stubhead(label = "Contrasts") |>
   tab_style(style = cell_text(size = "small"), locations = cells_body()) |>
   tab_style(
@@ -508,7 +510,7 @@ subDT[!MSR %like% "S"] |>
   gtsave(filename = fname, path = fpath)
 
 # Class-wise performance (Sensitivity & Specificity)
-fname <- "man-seg_sup-table-5.tex"
+fname <- "table-s5_man-seg_posthoc_cv_segm2.tex"
 subDT[MSR %like% "S"] |>
   gt(
     rowname_col = "CONTRAST",
@@ -556,7 +558,7 @@ subDT[MSR %like% "S"] |>
 
 ## Out-of-sample Validation
 # Mean & SD of Hippocampus by Group
-fname <- "man-seg_sup-table-6.tex"
+fname <- "table-s6_man-seg_hcv-hvr_val.tex"
 data.lst$Validation[
   order(MSR),
   .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
@@ -578,7 +580,7 @@ data.lst$Validation[
   gtsave(filename = fname, path = fpath)
 
 # Mixed ANOVA of Group & Side
-fname <- "man-seg_sup-table-7.tex"
+fname <- "table-s7_man-seg_anova_val.tex"
 comparisons.lst$Validation$ANOVA[
   order(MSR),
   .(
@@ -608,21 +610,25 @@ comparisons.lst$Validation$ANOVA[
     "Benjamini & Hochberg."
   ) |> md()) |>
   gtsave(filename = fname, path = fpath)
-
+rm(fname)
 
 ### PLOTS
 ## Boxplot Kappas HC(VC)
 outdir <- here("plots")
 if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
 fplots <- Map(
-  \(dset, fig) dset |>
-    tolower() |>
-    substr(1, 5) |>
-    paste(fig, sep = "_") |>
-    sprintf(fmt = "plots/man-seg_comp_%s.%s", c("png", "tiff")) |>
-    here(),
+  \(dset, fig) {
+    dset <- dset |> tolower() |> substr(1, 5)
+    sprintf(
+      "%s/%s_man-seg_comp_%s.%s",
+      outdir,
+      fig,
+      dset,
+      c("png", "tiff")
+    )
+  },
   c("Training", "Validation"),
-  c("pre-fig1", "sup-fig1")
+  c("fig-p1", "fig-s1")
 )
 
 # Cross-validation
@@ -713,10 +719,11 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
       SIDE = SIDE |> factor(labels = c("Left", "Right")),
       ROI = factor("Hippocampus"),
       MSR = MSR |> stringr::str_to_title() |> factor(),
+      GROUP,
       VAL
     )
   ] |>
-    ggplot(mapping = aes(x = MSR, y = VAL)) +
+    ggplot(mapping = aes(x = GROUP, y = VAL)) +
     theme_classic(base_size = 12) +
     theme(
       text = element_text(size = 12),
@@ -741,11 +748,11 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
     ) +
     scale_colour_manual(values = c("darkred", "midnightblue")) +
     scale_fill_manual(values = c("darkred", "midnightblue")) +
-    facet_grid(rows = vars(ROI), scales = "free_y") +
+    facet_grid(rows = vars(ROI), cols = vars(MSR), scales = "free_y") +
     labs(
       y = "Overlap/Accuracy",
       x = paste(
-        "Metric (<span style='color:darkred;'>Left</span> &amp;",
+        "Clinical group (<span style='color:darkred;'>Left</span> &amp;",
         "<span style='color:midnightblue;'>Right</span>)"
       )
     )
@@ -828,11 +835,12 @@ DT <- fpath |>
       )
     ]
     DT[, ID := sub("hc_adni_(man|cnn)_", "", ID)]
+    data.lst$Validation[!duplicated(ID), GROUP, keyby = ID][DT]
   })() |>
   dcast(... ~ SEGM, value = "value") |>
   setcolorder(c("ID"))
 vols.lst$Validation[["ADNI"]] <- copy(DT)
-rm(fname, fpath, segm, DT)
+rm(fpath, segm, DT)
 
 vols.lst <- lapply(vols.lst, rbindlist)
 
@@ -843,14 +851,18 @@ rm(dt1, dt2)
 
 ## Correlation plots
 fplots <- Map(
-  \(dset, fig) dset |>
-    tolower() |>
-    substr(1, 5) |>
-    paste(fig, sep = "_") |>
-    sprintf(fmt = "plots/man-seg_corr_%s.%s", c("png", "tiff")) |>
-    here(),
+  \(dset, fig) {
+    dset <- dset |> tolower() |> substr(1, 5)
+    sprintf(
+      "%s/%s_man-seg_corr_%s.%s",
+      outdir,
+      fig,
+      dset,
+      c("png", "tiff")
+    )
+  },
   c("Training", "Validation"),
-  c("fig2", "sup-fig2")
+  c("fig-2", "fig-s2")
 )
 
 cbPalette <- c(
@@ -881,6 +893,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
       aes(label = ..r.label..),
       r.accuracy = 0.001,
       size = 2.7,
+      cor.coef.name = "rho",
       label.x.npc = "right",
       label.y.npc = "bottom",
       hjust = "inward",
@@ -925,11 +938,12 @@ if (any(REDOPLOTS, !file.exists(fplots[[1]]))) {
 # Out-of-sample validation
 if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
   p <- vols.lst$Validation |>
-    ggplot(aes(x = CNN, y = MAN)) +
+    ggplot(aes(x = CNN, y = MAN, colour = GROUP)) +
     theme_classic(base_size = 12) +
     theme(
       text = element_text(size = 12),
       axis.text = element_text(size = 10),
+      axis.title.x = element_markdown(),
       legend.position = "none"
     ) +
     geom_abline(
@@ -944,16 +958,22 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
       aes(label = ..r.label..),
       r.accuracy = 0.001,
       size = 2.7,
+      cor.coef.name = "rho",
       label.x.npc = "right",
       label.y.npc = "bottom",
       hjust = "inward",
       method = "spearman"
     ) +
     facet_grid(rows = vars(ROI), cols = vars(SIDE), scales = "free") +
-    #scale_colour_manual(values = c("darkred", "midnightblue")) +
+    scale_colour_manual(values = cbPalette[c(2:3, 8)]) +
     labs(
       y = "Manually segmented volumes",
-      x = "Volumes segmented by CNN"
+      x = paste(
+        "Volumes segmented by CNN for: ",
+        "<span style='color:%s;'>CH</span>,",
+        "<span style='color:%s;'>MCI</span>, and",
+        "<span style='color:%s;'>AD</span>"
+      ) |> sprintf(cbPalette[2], cbPalette[3], cbPalette[8])
     )
 
   if (any(REDOPLOTS, !file.exists(fplots[[2]][1]))) {
@@ -982,14 +1002,18 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
 
 ## Bland-Altman plots
 fplots <- Map(
-  \(dset, fig) dset |>
-    tolower() |>
-    substr(1, 5) |>
-    paste(fig, sep = "_") |>
-    sprintf(fmt = "plots/man-seg_blandaltman_%s.%s", c("png", "tiff")) |>
-    here(),
+  \(dset, fig) {
+    dset <- dset |> tolower() |> substr(1, 5)
+    sprintf(
+      "%s/%s_man-seg_blandaltman_%s.%s",
+      outdir,
+      fig,
+      dset,
+      c("png", "tiff")
+    )
+  },
   c("Training", "Validation"),
-  c("fig3", "sup-fig3")
+  c("fig-3", "fig-s3")
 )
 
 # Cross-validation
@@ -1114,7 +1138,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
       AVG = (CNN + MAN) / 2,
       DIFF = CNN - MAN
     ),
-    .(SIDE, ROI)
+    .(SIDE, ROI, GROUP)
   ][
     , .(
       AVG, DIFF,
@@ -1122,7 +1146,7 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
       CI_low = mean(DIFF) - 1.96 * sd(DIFF),
       CI_high = mean(DIFF) + 1.96 * sd(DIFF)
     ),
-    ROI
+    .(ROI, GROUP)
   ]
 
   p <- ggplot(DT, aes(x = AVG, y = DIFF)) +
@@ -1135,45 +1159,45 @@ if (any(REDOPLOTS, !file.exists(fplots[[2]]))) {
     ) +
     geom_point(shape = 21, colour = cbPalette[1]) +
     geom_hline(
-      data = DT[, .SD[1], ROI],
+      data = DT[, .SD[1], .(ROI, GROUP)],
       aes(yintercept = MEAN_DIFF),
       colour = cbPalette[2],
       linetype = "dashed",
       alpha = .7
     ) +
     geom_text(
-      data = DT[, .SD[1]],
+      data = DT[, .SD[1], GROUP],
       aes(x = 1.2, y = MEAN_DIFF, label = round(MEAN_DIFF, 2)),
       size = 2.5
     ) +
     geom_hline(
-      data = DT[, .SD[1], ROI],
+      data = DT[, .SD[1], .(ROI, GROUP)],
       aes(yintercept = CI_low),
       colour = cbPalette[3],
       linetype = "dashed",
       alpha = .7
     ) +
     geom_text(
-      data = DT[, .SD[1]],
+      data = DT[, .SD[1], GROUP],
       aes(x = 1.2, y = CI_low, label = round(CI_low, 2)),
       nudge_y = -.100,
       size = 2.5
     ) +
     geom_hline(
-      data = DT[, .SD[1], ROI],
+      data = DT[, .SD[1], .(ROI, GROUP)],
       aes(yintercept = CI_high),
       colour = cbPalette[3],
       linetype = "dashed",
       alpha = .7
     ) +
     geom_text(
-      data = DT[, .SD[1]],
+      data = DT[, .SD[1], GROUP],
       aes(x = 1.2, y = CI_high, label = round(CI_high, 2)),
       nudge_y = .1,
       size = 2.5
     ) +
     xlim(.95, 6.2) +
-    facet_grid(rows = vars(ROI), scales = "free") +
+    facet_grid(rows = vars(ROI), cols = vars(GROUP), scales = "free") +
     labs(
       x = "Mean computed & manual volumes",
       y = "Computed - manual volumes"

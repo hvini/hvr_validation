@@ -1,0 +1,99 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage[flushleft,para]{threeparttable}
+\usepackage{graphicx}
+\usepackage{caption}
+\DeclareCaptionLabelFormat{sup}{#1 S#2}
+\captionsetup{width=0.8\textwidth,justification=centering,labelformat=sup,labelfont={large,sc},labelsep=endash,textfont=normalsize}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+\vspace*{3cm}\par
+\Large
+\textbf{Enhanced Detection of Age-Related and Cognitive Declines Using Automated Hippocampal-to-Ventricle Ratio in Alzheimer's Patients}
+\vspace*{2cm}\par
+\Huge
+Supplementary material
+\end{center}
+\end{titlepage}
+\thispagestyle{empty}
+\renewcommand{\listtablename}{List of Supplementary Tables}
+\renewcommand{\listfigurename}{List of Supplementary Figures}
+\listoftables
+\listoffigures
+\clearpage
+\pagenumbering{arabic}
+\centering
+\section*{Supplementary Tables}
+\vspace*{2cm}\par
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s1_man-seg_hcv-hvr_cv.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s2_man-seg_anova_cv.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s3_man-seg_posthoc_cv_side.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s4_man-seg_posthoc_cv_segm1.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s5_man-seg_posthoc_cv_segm2.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s6_man-seg_hcv-hvr_val.tex}
+\centering
+\input{/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s7_man-seg_anova_val.tex}
+\clearpage
+\section*{Supplementary Figures}
+\vspace*{2cm}\par
+\begin{figure}[h]
+\centering
+\includegraphics{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-seg_comp_valid.png}
+\caption[Out-of-sample validation segmentation performance.]{\textbf{Out-of-sample validation segmentation performance.}\\Violin plots of the distributions of the overlap and accuracy metrics (Dice, Kappa, and Sensitivity) between manual and computed segmentations of the hippocampus from the left (red) and right (blue) hemispheres on an out-of-sample subset of ADNI data using CNN for each of the clinical groups (CH, MCI, and AD). The median and standard deviation are represented inside the violin plots.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-seg_corr_valid.png}
+\caption[Out-of-sample validation Relationship between manual and computed hippocampal.]{\textbf{Out-of-sample validation Relationship between manual and computed hippocampal.}\\Scatter plots of the volumes (measured in cc) of the left and right hippocampus from the manual segmentations against those obtained from CNN on the out-of-sample subset of ADNI data for each of the clinical groups (CH, MCI, AD). The Spearman's rank correlation coefficients ($\rho$) and their significance are added for each hemisphere.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-seg_blandaltman_valid.png}
+\caption[Out-of-sample validation Bland-Altman plots.]{\textbf{Out-of-sample validation Bland-Altman plots.}\\Bland-Altman plots for the volumetric comparison between mean HCvol (in cc) resulting from the automatic segmentation of the out-of-sample subset of ADNI data for each of the clinical groups (CH, MCI, AD). The dashed lines represent the mean difference (orange) and the upper and lower limits of agreement (blue).\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni-bl_hcv-hvr_corrs_perms_malf.png}
+\caption[Permutation tests for differences in correlation strength between HCvol and HVR using MALF segmentations.]{\textbf{Permutation tests for differences in correlation strength between HCvol and HVR using MALF segmentations.}\\Distributions of the differences in Spearman's rank correlation coefficients ($\Delta\rho = \rho(\mathrm{HCvol}) - \rho(\mathrm{HVR})$) with respect to age, memory, and global cognition. The hypothesis tested is that the MALF-based HVR measure yields stronger correlations in magnitude than the MALF-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\alpha < 0.05$). Vertical lines mark the observed $\Delta\rho$; solid and red when significant, black and dashed when not. FDR-corrected $p$-values are provided as labels.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni-bl_hcv-hvr_corrs_perms_nlpb.png}
+\caption[Permutation tests for differences in correlation strength between HCvol and HVR using NLPB segmentations.]{\textbf{Permutation tests for differences in correlation strength between HCvol and HVR using NLPB segmentations.}\\Distributions of the differences in Spearman's rank correlation coefficients ($\Delta\rho = \rho(\mathrm{HCvol}) - \rho(\mathrm{HVR})$) with respect to age, memory, and global cognition. The hypothesis tested is that the NLPB-based HVR measure yields stronger correlations in magnitude than the NLPB-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\alpha < 0.05$). Vertical lines mark the observed $\Delta\rho$; solid and red when significant, black and dashed when not. FDR-corrected $p$-values are provided as labels.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni-bl_hcv-hvr_corrs_perms_cnn.png}
+\caption[Permutation tests for differences in correlation strength between HCvol and HVR using CNN segmentations.]{\textbf{Permutation tests for differences in correlation strength between HCvol and HVR using CNN segmentations.}\\Distributions of the differences in Spearman's rank correlation coefficients ($\Delta\rho = \rho(\mathrm{HCvol}) - \rho(\mathrm{HVR})$) with respect to age, memory, and global cognition. The hypothesis tested is that the CNN-based HVR measure yields stronger correlations in magnitude than the CNN-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\alpha < 0.05$). Vertical lines mark the observed $\Delta\rho$; solid and red when significant, black and dashed when not. FDR-corrected $p$-values are provided as labels.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni-bl_hcv-hvr_corrs_perms_fs6.png}
+\caption[Permutation tests for differences in correlation strength between HCvol and HVR using FreeSurfer segmentations.]{\textbf{Permutation tests for differences in correlation strength between HCvol and HVR using FreeSurfer segmentations.}\\Distributions of the differences in Spearman's rank correlation coefficients ($\Delta\rho = \rho(\mathrm{HCvol}) - \rho(\mathrm{HVR})$) with respect to age, memory, and global cognition. The hypothesis tested is that the FreeSurfer-based HVR measure yields stronger correlations in magnitude than the FreeSurfer-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\alpha < 0.05$). Vertical lines mark the observed $\Delta\rho$; solid and red when significant, black and dashed when not. FDR-corrected $p$-values are provided as labels.\\}
+\end{figure}
+\clearpage
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{/ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni-bl_hvr_corrs_perms_cnn-fs6.png}
+\caption[Permutation tests for differences in correlation strength of HVR between CNN and FreeSurfer segmentations.]{\textbf{Permutation tests for differences in correlation strength of HVR between CNN and FreeSurfer segmentations.}\\Distributions of the differences in Spearman's rank correlation coefficients ($\Delta\rho = \rho(\mathrm{CNN}) - \rho(\mathrm{FS})$) with respect to age, memory, and global cognition. The hypothesis tested is that the CNN-based HVR measure yields stronger correlations in magnitude than the FreeSurfer-based HVR measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\alpha < 0.05$). Vertical dashed lines mark the observed $\Delta\rho$. FDR-corrected $p$-values are provided as labels.\\}
+\end{figure}
+\clearpage
+\end{document}

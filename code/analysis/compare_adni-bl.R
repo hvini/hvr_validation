@@ -7,11 +7,9 @@ library(ggplot2)
 library(GGally)
 library(ggtext)
 library(gt)
-#library(rlang)
-#library(dunn.test)
 
 ### CONSTANTS
-REDOTABLE <- TRUE
+REDOTABLE <- FALSE
 REDOPLOTS <- FALSE
 RERUNSIMS <- FALSE
 
@@ -72,7 +70,7 @@ data.dt <- data.lst$ADNIMERGE |>
   setorder(DX, METHOD)
 
 ### TABLE summary
-fname <- "adni-bl_table-2.tex"
+fname <- "table-2_adni-bl_hcv-hvr.tex"
 fpath <- here("tables")
 if (!file.exists(here(fpath, fname)) | REDOTABLE) {
   data.dt[, -"QC"] |>
@@ -265,16 +263,20 @@ diag_fun  <- function(data, mapping, var, labels.dt,...) {
 # HC By DX
 outdir <- here("plots")
 if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
-rm(outdir)
 fplots <- Map(
-  \(roi, fig) roi |>
-    tolower() |>
-    substr(1, 5) |>
-    paste(fig, sep = "_") |>
-    sprintf(fmt = "plots/adni-bl_similarity_%s.%s", c("png", "tiff")) |>
-    here(),
+  \(roi, fig) {
+    roi <- roi |> tolower() |> substr(1, 5)
+    paste(fig, sep = "_")
+    sprintf(
+      "%s/%s_adni-bl_similarity_%s.%s",
+      outdir,
+      fig,
+      roi,
+      c("png", "tiff")
+    )
+  },
   c("HC", "HVR"),
-  c("fig4", "fig5")
+  c("fig-4", "fig-5")
 )
 
 for (roi in c("HC", "HVR")) {

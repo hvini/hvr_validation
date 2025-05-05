@@ -1,0 +1,8 @@
+\contentsline {figure}{\numberline {1}{\ignorespaces Out-of-sample validation segmentation performance.}}{8}
+\contentsline {figure}{\numberline {2}{\ignorespaces Out-of-sample validation Relationship between manual and computed hippocampal.}}{9}
+\contentsline {figure}{\numberline {3}{\ignorespaces Out-of-sample validation Bland-Altman plots.}}{10}
+\contentsline {figure}{\numberline {4}{\ignorespaces Permutation tests for differences in correlation strength between HCvol and HVR using MALF segmentations.}}{11}
+\contentsline {figure}{\numberline {5}{\ignorespaces Permutation tests for differences in correlation strength between HCvol and HVR using NLPB segmentations.}}{12}
+\contentsline {figure}{\numberline {6}{\ignorespaces Permutation tests for differences in correlation strength between HCvol and HVR using CNN segmentations.}}{13}
+\contentsline {figure}{\numberline {7}{\ignorespaces Permutation tests for differences in correlation strength between HCvol and HVR using FreeSurfer segmentations.}}{14}
+\contentsline {figure}{\numberline {8}{\ignorespaces Permutation tests for differences in correlation strength of HVR between CNN and FreeSurfer segmentations.}}{15}

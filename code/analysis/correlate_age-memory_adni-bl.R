@@ -220,7 +220,7 @@ if (all(file.exists(fpath), !RERUNPERMS)) {
       c("Rval", "Tval", "Pval", "CIl", "CIh") := lapply(.SD, as.numeric),
       .SDcols = Rval:CIh
     ][
-      , Pa := p.adjust(Pval, method = "bonferroni")
+      , Pa := p.adjust(Pval, method = "fdr")
     ][
       , SIGN := fcase(
         Pa < 0.001, "***",
@@ -382,7 +382,7 @@ for (mtd in unique(corr.lst$COEFS$METHOD)) {
     text = element_text(size = 11),
     axis.text.x = element_markdown(),
     axis.title.x = element_blank(),
-    plot.caption = element_text(size = 8),
+    #plot.caption = element_text(size = 8),
     legend.position = "none"
   ) +
   facet_grid(rows = vars(DX), cols = vars(COVAR)) +
@@ -422,11 +422,11 @@ for (mtd in unique(corr.lst$COEFS$METHOD)) {
   scale_x_discrete(labels = plot_params.lst$X) +
   labs(
     title = plot_params.lst$TITLE[[mtd]],
-    y = "Spearman's rho",
-    caption = sprintf(
-      "N = %i; *  p < 0.05; **  p < 0.01; ***  p < 0.001",
-      plot_params.lst$N[[mtd]]
-    )
+    #caption = sprintf(
+      #"N = %i; *  p < 0.05; **  p < 0.01; ***  p < 0.001",
+      #plot_params.lst$N[[mtd]]
+    #),
+    y = expression("Spearman's " * rho)
   )
 }
 
@@ -442,9 +442,9 @@ p <- grid.arrange(
 outdir <- here("plots")
 if (!file.exists(outdir)) dir.create(outdir, recursive = TRUE)
 fpaths <- sprintf(
-  fmt = "%s/adni-bl_hcv-hvr_corrs_%s.%s",
+  "%s/%s_adni-bl_hcv-hvr_corrs.%s",
   outdir,
-  "fig6",
+  "fig-6",
   c("png", "tiff")
 )
 
@@ -487,7 +487,7 @@ for (mtd in unique(corr.lst$PERMS$METHOD)) {
     text = element_text(size = 11),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    plot.caption = element_text(size = 8),
+    #plot.caption = element_text(size = 8),
     legend.position = "none"
   ) +
   facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
@@ -530,12 +530,12 @@ for (mtd in unique(corr.lst$PERMS$METHOD)) {
   ) +
   labs(
     #title = plot_params.lst$TITLE[[mtd]],
+    #caption = paste(
+      #"Permutation test using 10,000 repetitions.",
+      #"Contrasts: Age & Cognition: HCv > HVR; Memory: HCv < HVR."
+    #),
     x = expression("Difference of " * rho),
-    y = NULL,
-    caption = paste(
-      "Permutation test using 10,000 repetitions.",
-      "Contrasts: Age & Cognition: HCv > HVR; Memory: HCv < HVR."
-    )
+    y = NULL
   )
 }
 rm(mtd, subDT)
@@ -548,10 +548,10 @@ fpaths <- corr.lst$PERMS$METHOD |>
   Map(
     f = \(f, fig) ifelse(
       grepl("cnn-fs6", f),
-      sprintf("%s/adni-bl_hvr_corrs_perms_%s_%s", outdir, f, fig),
-      sprintf("%s/adni-bl_hcv-hvr_corrs_perms_%s_%s", outdir, f, fig)
+      sprintf("%s/%s_adni-bl_hvr_corrs_perms_%s", outdir, fig, f),
+      sprintf("%s/%s_adni-bl_hcv-hvr_corrs_perms_%s", outdir, fig, f)
     ),
-    paste0("sup-fig", 4:8)
+    paste0("fig-s", c(6:7, 4:5, 8))
   )
 
 Map(

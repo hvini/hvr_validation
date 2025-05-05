@@ -1,0 +1,551 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2023.6.4)  8 APR 2025 09:31
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.tex
+(/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.tex
+LaTeX2e <2017-04-15>
+Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texlive/texmf-dist/tex/latex/geometry/geometry.sty
+Package: geometry 2010/09/12 v5.6 Page Geometry
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty
+Package: ifpdf 2017/03/15 v3.2 Provides the ifpdf switch
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifvtex.sty
+Package: ifvtex 2016/05/16 v1.6 Detect VTeX and its facilities (HO)
+Package ifvtex Info: VTeX not detected.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/ifxetex/ifxetex.sty
+Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
+)
+\Gm@cnth=\count87
+\Gm@cntv=\count88
+\c@Gm@tempcnt=\count89
+\Gm@bindingoffset=\dimen103
+\Gm@wd@mp=\dimen104
+\Gm@odd@mp=\dimen105
+\Gm@even@mp=\dimen106
+\Gm@layoutwidth=\dimen107
+\Gm@layoutheight=\dimen108
+\Gm@layouthoffset=\dimen109
+\Gm@layoutvoffset=\dimen110
+\Gm@dimlist=\toks15
+)
+(/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2016/04/27 v1.618033 publication quality tables
+\heavyrulewidth=\dimen111
+\lightrulewidth=\dimen112
+\cmidrulewidth=\dimen113
+\belowrulesep=\dimen114
+\belowbottomsep=\dimen115
+\aboverulesep=\dimen116
+\abovetopsep=\dimen117
+\cmidrulesep=\dimen118
+\cmidrulekern=\dimen119
+\defaultaddspace=\dimen120
+\@cmidla=\count90
+\@cmidlb=\count91
+\@aboverulesep=\dimen121
+\@belowrulesep=\dimen122
+\@thisruleclass=\count92
+\@lastruleclass=\count93
+\@thisrulewidth=\dimen123
+)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2017/09/02 v2.17a AMS math features
+\@mathmargin=\skip43
+
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+Package: amstext 2000/06/29 v2.01 AMS text
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks16
+\ex@=\dimen124
+))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen125
+)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2016/03/08 v2.02 operator names
+)
+\inf@bad=\count94
+LaTeX Info: Redefining \frac on input line 213.
+\uproot@=\count95
+\leftroot@=\count96
+LaTeX Info: Redefining \overline on input line 375.
+\classnum@=\count97
+\DOTSCASE@=\count98
+LaTeX Info: Redefining \ldots on input line 472.
+LaTeX Info: Redefining \dots on input line 475.
+LaTeX Info: Redefining \cdots on input line 596.
+\Mathstrutbox@=\box26
+\strutbox@=\box27
+\big@size=\dimen126
+LaTeX Font Info:    Redeclaring font encoding OML on input line 712.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 713.
+\macc@depth=\count99
+\c@MaxMatrixCols=\count100
+\dotsspace@=\muskip10
+\c@parentequation=\count101
+\dspbrk@lvl=\count102
+\tag@help=\toks17
+\row@=\count103
+\column@=\count104
+\maxfields@=\count105
+\andhelp@=\toks18
+\eqnshift@=\dimen127
+\alignsep@=\dimen128
+\tagshift@=\dimen129
+\tagwidth@=\dimen130
+\totwidth@=\dimen131
+\lineht@=\dimen132
+\@envbody=\toks19
+\multlinegap=\skip44
+\multlinetaggap=\skip45
+\mathdisplay@stack=\toks20
+LaTeX Info: Redefining \[ on input line 2817.
+LaTeX Info: Redefining \] on input line 2818.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/tools/longtable.sty
+Package: longtable 2014/10/28 v4.11 Multi-page Table package (DPC)
+\LTleft=\skip46
+\LTright=\skip47
+\LTpre=\skip48
+\LTpost=\skip49
+\LTchunksize=\count106
+\LTcapwidth=\dimen133
+\LT@head=\box28
+\LT@firsthead=\box29
+\LT@foot=\box30
+\LT@lastfoot=\box31
+\LT@cols=\count107
+\LT@rows=\count108
+\c@LT@tables=\count109
+\c@LT@chunks=\count110
+\LT@p@ftn=\toks21
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/rotating.sty
+Package: rotating 2016/08/11 v2.16d rotated objects in LaTeX
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2017/06/25 v1.2c Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2016/01/03 v1.10 sin cos tan (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 99.
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
+))
+\Gin@req@height=\dimen134
+\Gin@req@width=\dimen135
+)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
+)
+\c@r@tfl@t=\count111
+\rotFPtop=\skip50
+\rotFPbot=\skip51
+\rot@float@box=\box32
+\rot@mess@toks=\toks22
+)
+(/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2016/11/25 v2.2 Span multiple rows of a table
+\multirow@colwidth=\skip52
+\multirow@cntb=\count112
+\multirow@dima=\skip53
+\bigstrutjot=\dimen136
+)
+(/usr/share/texlive/texmf-dist/tex/latex/threeparttable/threeparttable.sty
+Package: threeparttable 2003/06/13  v 3.0
+\@tempboxb=\box33
+)
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2016/02/21 v3.3-144 Customizing captions (AR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2016/05/22 v1.7-166 caption3 kernel (AR)
+Package caption3 Info: TeX engine: e-TeX on input line 67.
+\captionmargin=\dimen137
+\captionmargin@=\dimen138
+\captionwidth=\dimen139
+\caption@tempdima=\dimen140
+\caption@indent=\dimen141
+\caption@parindent=\dimen142
+\caption@hangindent=\dimen143
+)
+\c@ContinuedFloat=\count113
+Package caption Info: longtable package is loaded.
+
+(/usr/share/texlive/texmf-dist/tex/latex/caption/ltcaption.sty
+Package: ltcaption 2013/06/09 v1.4-94 longtable captions (AR)
+)
+Package caption Info: rotating package is loaded.
+Package caption Info: threeparttable package is loaded.
+)
+(/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.aux)
+\openout1 = `supplementaries.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 13.
+LaTeX Font Info:    ... okay on input line 13.
+
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: <default>
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(72.26999pt, 469.75502pt, 72.26999pt)
+* v-part:(T,H,B)=(72.26999pt, 650.43001pt, 72.26999pt)
+* \paperwidth=614.295pt
+* \paperheight=794.96999pt
+* \textwidth=469.75502pt
+* \textheight=650.43001pt
+* \oddsidemargin=0.0pt
+* \evensidemargin=0.0pt
+* \topmargin=-37.0pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=10.0pt
+* \footskip=30.0pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count114
+\scratchdimen=\dimen144
+\scratchbox=\box34
+\nofMPsegments=\count115
+\nofMParguments=\count116
+\everyMPshowfont=\toks23
+\MPscratchCnt=\count117
+\MPscratchDim=\dimen145
+\MPnumerator=\count118
+\makeMPintoPDFobject=\count119
+\everyMPtoPDFconversion=\toks24
+) (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+Package: epstopdf-base 2016/05/15 v2.6 Base part for package epstopdf
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty
+Package: infwarerr 2016/05/16 v1.4 Providing info/warning/error messages (HO)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+Package: grfext 2016/05/16 v1.2 Manage graphics extensions (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty
+Package: kvdefinekeys 2016/05/16 v1.4 Define keys (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
+Package: ltxcmds 2016/05/16 v1.23 LaTeX kernel commands for general use (HO)
+)))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2016/05/16 v3.12 Key value format for package options (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+Package: kvsetkeys 2016/05/16 v1.17 Key value parser (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty
+Package: etexcmds 2016/05/16 v1.6 Avoid name clashes with e-TeX commands (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
+Package: ifluatex 2016/05/16 v1.4 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
+Package etexcmds Info: Could not find \expanded.
+(etexcmds)             That can mean that you are not using pdfTeX 1.50 or
+(etexcmds)             that some package has redefined \expanded.
+(etexcmds)             In the latter case, load this package earlier.
+)))
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+Package: pdftexcmds 2018/01/21 v0.26 Utility functions of pdfTeX for LuaTeX (HO
+)
+Package pdftexcmds Info: LuaTeX not detected.
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+38.
+Package grfext Info: Graphics extension search list:
+(grfext)             [.pdf,.png,.jpg,.mps,.jpeg,.jbig2,.jb2,.PDF,.PNG,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 456.
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: End \AtBeginDocument code.
+
+[1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+(/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.lot)
+\tf@lot=\write3
+\openout3 = `supplementaries.lot'.
+
+
+(/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.lof)
+\tf@lof=\write4
+\openout4 = `supplementaries.lof'.
+
+
+[1]
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s1_man-seg_hcv-hvr_cv.
+tex
+Underfull \hbox (badness 10000) in paragraph at lines 35--36
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s2_man-seg_anova_cv.te
+x
+Underfull \hbox (badness 10000) in paragraph at lines 25--26
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s3_man-seg_posthoc_cv_
+side.tex
+Underfull \hbox (badness 10000) in paragraph at lines 35--36
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s4_man-seg_posthoc_cv_
+segm1.tex
+Overfull \hbox (6.03458pt too wide) in alignment at lines 3--51
+[] [] [] [] [] [] []
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 53--54
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s5_man-seg_posthoc_cv_
+segm2.tex
+Overfull \hbox (6.03458pt too wide) in alignment at lines 3--39
+[] [] [] [] [] [] []
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 41--42
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s6_man-seg_hcv-hvr_val
+.tex
+Underfull \hbox (badness 10000) in paragraph at lines 35--36
+
+ []
+
+)
+(/ipl/ipl27/sfernandez/hvr_validation/tables/table_clean-s7_man-seg_anova_val.t
+ex
+Underfull \hbox (badness 10000) in paragraph at lines 33--34
+
+ []
+
+) [1
+
+] [2] [3] [4] [5] [6] [7]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-seg_comp_valid.png, id=4
+4, 433.62pt x 216.81pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-seg_comp_valid.png 
+Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-seg_comp_valid.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-
+seg_comp_valid.png  used on input line 53.
+(pdftex.def)             Requested size: 433.61894pt x 216.80946pt.
+ [8
+
+ </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s1_man-seg_comp_valid.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-seg_corr_valid.png, id=4
+8, 361.35pt x 361.35pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-seg_corr_valid.png 
+Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-seg_corr_valid.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-
+seg_corr_valid.png  used on input line 59.
+(pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
+ [9
+
+ </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s2_man-seg_corr_valid.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-seg_blandaltman_valid.pn
+g, id=52, 433.62pt x 216.81pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-seg_blandaltman_val
+id.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-seg_blandaltman_vali
+d.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-
+seg_blandaltman_valid.png  used on input line 65.
+(pdftex.def)             Requested size: 433.61894pt x 216.80946pt.
+ [10
+
+ </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s3_man-seg_blandaltman_valid.p
+ng>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni-bl_hcv-hvr_corrs_perms_
+malf.png, id=56, 578.16pt x 505.89pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni-bl_hcv-hvr_corrs_p
+erms_malf.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni-bl_hcv-hvr_corrs_pe
+rms_malf.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni
+-bl_hcv-hvr_corrs_perms_malf.png  used on input line 71.
+(pdftex.def)             Requested size: 469.75502pt x 411.0346pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[11 </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s4_adni-bl_hcv-hvr_corrs_pe
+rms_malf.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni-bl_hcv-hvr_corrs_perms_
+nlpb.png, id=62, 578.16pt x 505.89pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni-bl_hcv-hvr_corrs_p
+erms_nlpb.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni-bl_hcv-hvr_corrs_pe
+rms_nlpb.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni
+-bl_hcv-hvr_corrs_perms_nlpb.png  used on input line 77.
+(pdftex.def)             Requested size: 469.75502pt x 411.0346pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[12 </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s5_adni-bl_hcv-hvr_corrs_pe
+rms_nlpb.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni-bl_hcv-hvr_corrs_perms_
+cnn.png, id=66, 578.16pt x 505.89pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni-bl_hcv-hvr_corrs_p
+erms_cnn.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni-bl_hcv-hvr_corrs_pe
+rms_cnn.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni
+-bl_hcv-hvr_corrs_perms_cnn.png  used on input line 83.
+(pdftex.def)             Requested size: 469.75502pt x 411.0346pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[13 </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s6_adni-bl_hcv-hvr_corrs_pe
+rms_cnn.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni-bl_hcv-hvr_corrs_perms_
+fs6.png, id=70, 578.16pt x 505.89pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni-bl_hcv-hvr_corrs_p
+erms_fs6.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni-bl_hcv-hvr_corrs_pe
+rms_fs6.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni
+-bl_hcv-hvr_corrs_perms_fs6.png  used on input line 89.
+(pdftex.def)             Requested size: 469.75502pt x 411.0346pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[14 </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s7_adni-bl_hcv-hvr_corrs_pe
+rms_fs6.png>]
+</ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni-bl_hvr_corrs_perms_cnn-
+fs6.png, id=74, 578.16pt x 505.89pt>
+File: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni-bl_hvr_corrs_perms
+_cnn-fs6.png Graphic file (type png)
+<use /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni-bl_hvr_corrs_perms_
+cnn-fs6.png>
+Package pdftex.def Info: /ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni
+-bl_hvr_corrs_perms_cnn-fs6.png  used on input line 95.
+(pdftex.def)             Requested size: 469.75502pt x 411.0346pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[15 </ipl/ipl27/sfernandez/hvr_validation/plots/fig-s8_adni-bl_hvr_corrs_perms_
+cnn-fs6.png>]
+(/ipl/ipl27/sfernandez/hvr_validation/supplementaries/supplementaries.aux) ) 
+Here is how much of TeX's memory you used:
+ 4068 strings out of 492982
+ 64864 string characters out of 6134897
+ 174587 words of memory out of 5000000
+ 7540 multiletter control sequences out of 15000+600000
+ 10969 words of font info for 39 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 41i,12n,42p,1010b,355s stack positions out of 5000i,500n,10000p,200000b,80000s
+</u
+sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/tex
+live/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/texmf-d
+ist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb><
+/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb>
+Output written on /ipl/ipl27/sfernandez/hvr_validation/supplementaries/suppleme
+ntaries.pdf (17 pages, 3625293 bytes).
+PDF statistics:
+ 123 PDF objects out of 1000 (max. 8388607)
+ 81 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 41 words of extra memory for PDF output out of 10000 (max. 10000000)
+

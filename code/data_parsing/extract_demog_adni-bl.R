@@ -104,7 +104,7 @@ demog.dt[
 # 3:    MCI 4.067485 2.593530
 
 ## Demographics table
-fname <- "adni-bl_table-1.tex"
+fname <- "table-1_adni-bl_demog.tex"
 fpath <- here("tables")
 if (!file.exists(fpath)) dir.create(fpath)
 demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
