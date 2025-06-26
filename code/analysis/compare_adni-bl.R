@@ -9,7 +9,7 @@ library(ggtext)
 library(gt)
 
 ### CONSTANTS
-REDOTABLE <- FALSE
+REDOTABLE <- TRUE
 REDOPLOTS <- FALSE
 RERUNSIMS <- FALSE
 
@@ -70,10 +70,10 @@ data.dt <- data.lst$ADNIMERGE |>
   setorder(DX, METHOD)
 
 ### TABLE summary
-fname <- "table-2_adni-bl_hcv-hvr.tex"
-fpath <- here("tables")
-if (!file.exists(here(fpath, fname)) | REDOTABLE) {
-  data.dt[, -"QC"] |>
+exts  <- c("rds", "html", "tex")
+fpaths <- sprintf("tables/table-2_adni-bl_hcv-hvr.%s", exts) |> here()
+if (any(!file.exists(fpaths), REDOTABLE)) {
+  tbl <- data.dt[, -"QC"] |>
     melt(measure = c("HC", "HVR")) |>
     na.omit() |>
     {function(DT)
@@ -157,11 +157,173 @@ if (!file.exists(here(fpath, fname)) | REDOTABLE) {
     tab_footnote(
       footnote = "N of unreported cases from ADNI.",
       locations = cells_stub(rows = matches("Missing"))
-    ) |>
-    gtsave(filename = fname, path = fpath)
-}
-rm(fname, fpath)
+    )
 
+  here(fpaths[1]) |> saveRDS(object = tbl)
+  for (f in fpaths[-1]) gtsave(tbl, filename = basename(f), path = dirname(f))
+}
+
+## Only HC & HVR
+fpaths <- sprintf("tables/table-2_1_adni-bl_hcv-hvr.%s", exts) |> here()
+if (any(!file.exists(fpaths), REDOTABLE)) {
+  tbl <- data.dt |>
+    melt(measure = c("HC", "HVR")) |>
+    na.omit() |>
+    {function(DT)
+      DT[
+        ,
+        .(value = sprintf( "%.2f (%.2f)", mean(value), sd(value))),
+        by = METHOD:variable
+      ]
+    }() |>
+    #rbind(
+      #data.dt[
+        #is.na(HC),
+        #.(variable = "Fail", value = .N),
+        #by = .(METHOD, DX)
+      #]
+    #) |>
+    {function(DT) {
+      DT[
+        ,
+        variable := fcase(
+          variable == "HC", "HC",
+          variable == "HVR", "HVR",
+          METHOD == "FS_V4_V5", "M",
+          default = "F"
+        )# |>
+        #factor(
+          #levels = c("HC", "HVR", "M", "F"),
+          #labels = c("Hippocampus", "HVR", "Missing", "Failures")
+        #)
+      ]
+      DT[
+        data.dt[, .(N = .N - .SD[is.na(HC), .N]), METHOD],
+        on = "METHOD",
+        METHOD := sprintf(
+          "**%s**, N: %s",
+          fcase(
+            METHOD == "FS_V4_V5", "FreeSurfer v4.3 & v5.1",
+            METHOD == "FS_V6", "FreeSurfer v6.0",
+            default = as.character(METHOD)
+          ),
+          format(N, big.mark = ","))
+      ]
+    }}() |>
+    dcast(METHOD ~ DX + variable, value.var = "value") |>
+    gt(
+      rowname_col = "METHOD",
+      #groupname_col = "METHOD",
+      process_md = TRUE
+    ) |>
+    tab_spanner("**CH**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["CH", on = "DX", .N]) |>
+        md(),
+      columns = starts_with("CH")
+    ) |>
+    tab_spanner("**MCI**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["MCI", on = "DX", .N]) |>
+        md(),
+      columns = starts_with("MCI")
+    ) |>
+    tab_spanner("**AD**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["AD", on = "DX", .N]) |>
+        md(),
+      columns = starts_with("AD")
+    ) |>
+    tab_options(
+      footnotes.multiline = FALSE,
+      latex.tbl.pos = "h"
+    ) |>
+    cols_align("center") |>
+    cols_label(
+      ends_with("HC") ~ "HC vol.",
+      ends_with("HVR") ~ "HVR"
+    ) |>
+    tab_stub_indent(rows = everything(), indent = 2) |>
+    sub_missing(missing_text = "-") |>
+    tab_footnote(footnote = "Mean (SD).")
+
+  here(fpaths[1]) |> saveRDS(object = tbl)
+  for (f in fpaths[-1]) gtsave(tbl, filename = basename(f), path = dirname(f))
+}
+
+## Only Missing/Failures
+fpaths <- sprintf("tables/table-2_2_adni-bl_hcv-hvr.%s", exts) |> here()
+if (any(!file.exists(fpaths), REDOTABLE)) {
+  tbl <- data.dt[
+    is.na(HC),
+    .(variable = "Fail", value = .N),
+    by = .(METHOD, DX)
+  ] |>
+    {function(DT) {
+      DT[
+        ,
+        variable := fcase(
+          variable == "HC", "HC",
+          variable == "HVR", "HVR",
+          METHOD == "FS_V4_V5", "M",
+          default = "F"
+        ) |>
+        factor(
+          levels = c("HC", "HVR", "M", "F"),
+          labels = c("Hippocampus", "HVR", "Missing", "Failures")
+        )
+      ]
+      DT[
+        data.dt[, .(N = .N - .SD[is.na(HC), .N]), METHOD],
+        on = "METHOD",
+        METHOD := sprintf(
+          "**%s**, N: %s",
+          fcase(
+            METHOD == "FS_V4_V5", "FreeSurfer v4.3 & v5.1",
+            METHOD == "FS_V6", "FreeSurfer v6.0",
+            default = as.character(METHOD)
+          ),
+          format(N, big.mark = ","))
+      ]
+    }}() |>
+    dcast(METHOD + variable ~ DX, value.var = "value") |>
+    gt(
+      rowname_col = "variable",
+      groupname_col = "METHOD",
+      process_md = TRUE
+    ) |>
+    tab_spanner(
+      label = "Clinical Label",
+      columns = c("CH", "MCI", "AD")
+    ) |>
+    tab_options(
+      footnotes.multiline = FALSE,
+      latex.tbl.pos = "h"
+    ) |>
+    cols_align("center", columns = c("CH", "MCI", "AD")) |>
+    cols_label(
+      CH = "**CH**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["CH", on = "DX", .N]) |>
+        md(),
+      MCI = "**MCI**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["MCI", on = "DX", .N]) |>
+        md(),
+      AD = "**AD**, N: %i" |>
+        sprintf(data.dt[!duplicated(PTID)]["AD", on = "DX", .N]) |>
+        md()
+    ) |>
+    tab_stub_indent(rows = everything(), indent = 2) |>
+    sub_missing(missing_text = "-") |>
+    tab_footnote(
+      footnote = "N of failed segmentations.",
+      locations = cells_stub(rows = matches("Failures"))
+    ) |>
+    tab_footnote(
+      footnote = "N of unreported cases from ADNI.",
+      locations = cells_stub(rows = matches("Missing"))
+    )
+
+  here(fpaths[1]) |> saveRDS(object = tbl)
+  for (f in fpaths[-1]) gtsave(tbl, filename = basename(f), path = dirname(f))
+}
+rm(exts, fpaths)
 
 ### EFFECT sizes
 # CH vs AD

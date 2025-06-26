@@ -104,10 +104,10 @@ demog.dt[
 # 3:    MCI 4.067485 2.593530
 
 ## Demographics table
-fname <- "table-1_adni-bl_demog.tex"
-fpath <- here("tables")
-if (!file.exists(fpath)) dir.create(fpath)
-demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
+exts <- c("html", "tex")
+fname <- "table-1_adni-bl_demog"
+fpaths <- sprintf("%s/%s.%s", "tables", fname, exts) |> here()
+tbl <- demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
   melt(id = "DX", variable = "VAR") |>
   suppressWarnings() |>
   na.omit() |>
@@ -192,10 +192,17 @@ demog.dt[, .SD, DX, .SDcols = AGE:RAVLT_learning] |>
   tab_footnote(
     footnote = "Mean (SD).",
     locations = cells_stub(rows = c(2:4, 6))
-  ) |>
-  gtsave(filename = fname, path = fpath)
+  )
 
-rm(fname, fpath)
+d <- fpaths |> dirname() |> unique()
+if (!dir.exists(d)) dir.create(d)
+for (f in fpaths) {
+  gtsave(tbl, filename = basename(f), path = dirname(f))
+}
+
+"%s/%s.rds" |> sprintf(d, fname) |> here() |> saveRDS(object = tbl)
+
+rm(d, fname, fpaths, exts)
 
 
 ### Post-hoc analyses

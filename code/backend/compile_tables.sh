@@ -38,7 +38,7 @@ Tables
 EOF
 
 # Loop through all table files (adjust the pattern as needed)
-for file in ${TABLESDIR}/table-[0-9]*.tex
+for file in ${TABLESDIR}/table-[0-9]_*.tex
 do
 	## Capture table number for purposes...
 	if [[ $file =~ table-([0-9]) ]]

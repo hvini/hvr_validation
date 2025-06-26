@@ -286,8 +286,8 @@ fpath <- here("tables")
 if (!file.exists(fpath)) dir.create(fpath)
 ## Cross-validation
 # Median & SD - Hippocampus & Ventricles
-fname <- "table-s1_man-seg_hcv-hvr_cv.tex"
-data.lst$Training[
+fnames <- "table-s1_man-seg_hcv-hvr_cv.%s" |> sprintf(c("rds", "html", "tex"))
+tbl <- data.lst$Training[
   ,
   .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
   .(
@@ -304,12 +304,14 @@ data.lst$Training[
   tab_spanner(label = "Hippocampus", columns = starts_with("H"), level = 2) |>
   tab_spanner(label = "Ventricles", columns = starts_with("V"), level = 2) |>
   cols_label(ends_with("L") ~ "Left", ends_with("R") ~ "Right") |>
-  tab_footnote(footnote = "Median (SD).") |>
-  gtsave(filename = fname, path = fpath)
+  tab_footnote(footnote = "Median (SD).")
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 # Repeated measures ANOVA
-fname <- "table-s2_man-seg_anova_cv.tex"
-comparisons.lst$Training$ANOVA[
+fnames <- "table-s2_man-seg_anova_cv.%s" |> sprintf(c("rds", "html", "tex"))
+tbl <- comparisons.lst$Training$ANOVA[
   order(MSR),
   .(
     Fstat,
@@ -332,12 +334,15 @@ comparisons.lst$Training$ANOVA[
     "Repeated-measures robust two-way ANOVA with trimmed means.",
     "*p* values controlled for false discovery rate based on",
     "Benjamini & Hochberg."
-  ) |> md()) |>
-  gtsave(filename = fname, path = fpath)
+  ) |> md())
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 # Posthoc (Sides)
-fname <- "table-s3_man-seg_posthoc_cv_side.tex"
-comparisons.lst$Training$PostHoc[
+fnames <- "table-s3_man-seg_posthoc_cv_side.%s" |>
+  sprintf(c("rds", "html", "tex"))
+tbl <- comparisons.lst$Training$PostHoc[
   substr(G1, 1, 1) == substr(G2, 1, 1),
   .(
     PSI = fcase(
@@ -415,8 +420,10 @@ comparisons.lst$Training$PostHoc[
       "Robust pair-wise posthoc comparisons using trimmed means.",
       "Bold cells show significance after multiple comparison correction."
     )
-  ) |>
-  gtsave(filename = fname, path = fpath)
+  )
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 # Posthoc (Segmentations)
 subDT <- comparisons.lst$Training$PostHoc[substr(G1,1,1) != substr(G2,1,1)] |>
@@ -462,8 +469,9 @@ subDT <- comparisons.lst$Training$PostHoc[substr(G1,1,1) != substr(G2,1,1)] |>
   setcolorder(c(1:3, 5, 7, 9))
 
 # Overall agreement (Accuracy, Dice & Kappa)
-fname <- "table-s4_man-seg_posthoc_cv_segm1.tex"
-subDT[!MSR %like% "S"] |>
+fnames <- "table-s4_man-seg_posthoc_cv_segm1.%s" |>
+  sprintf(c("rds", "html", "tex"))
+tbl <- subDT[!MSR %like% "S"] |>
   gt(
     rowname_col = "CONTRAST",
     groupname_col = "MSR",
@@ -506,12 +514,15 @@ subDT[!MSR %like% "S"] |>
       "Robust pair-wise posthoc comparisons using trimmed means.",
       "Bold cells show significance after multiple comparison correction."
     )
-  ) |>
-  gtsave(filename = fname, path = fpath)
+  )
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 # Class-wise performance (Sensitivity & Specificity)
-fname <- "table-s5_man-seg_posthoc_cv_segm2.tex"
-subDT[MSR %like% "S"] |>
+fnames <- "table-s5_man-seg_posthoc_cv_segm2.%s" |>
+  sprintf(c("rds", "html", "tex"))
+tbl <- subDT[MSR %like% "S"] |>
   gt(
     rowname_col = "CONTRAST",
     groupname_col = "MSR",
@@ -552,14 +563,16 @@ subDT[MSR %like% "S"] |>
       "Robust pair-wise posthoc comparisons using trimmed means.",
       "Bold cells show significance after multiple comparison correction."
     )
-  ) |>
-  gtsave(filename = fname, path = fpath)
+  )
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 
 ## Out-of-sample Validation
 # Mean & SD of Hippocampus by Group
-fname <- "table-s6_man-seg_hcv-hvr_val.tex"
-data.lst$Validation[
+fnames <- "table-s6_man-seg_hcv-hvr_val.%s" |> sprintf(c("rds", "html", "tex"))
+tbl <- data.lst$Validation[
   order(MSR),
   .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
   .(
@@ -576,12 +589,14 @@ data.lst$Validation[
   cols_align("center", columns = c("L", "R")) |>
   tab_spanner(label = "Hippocampus", columns = c("L", "R")) |>
   cols_label(ends_with("L") ~ "Left", ends_with("R") ~ "Right") |>
-  tab_footnote(footnote = "Median (SD).") |>
-  gtsave(filename = fname, path = fpath)
+  tab_footnote(footnote = "Median (SD).")
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
 
 # Mixed ANOVA of Group & Side
-fname <- "table-s7_man-seg_anova_val.tex"
-comparisons.lst$Validation$ANOVA[
+fnames <- "table-s7_man-seg_anova_val.%s" |> sprintf(c("rds", "html", "tex"))
+tbl <- comparisons.lst$Validation$ANOVA[
   order(MSR),
   .(
     Fstat,
@@ -608,9 +623,11 @@ comparisons.lst$Validation$ANOVA[
     "Robust two-way mixed ANOVA with trimmed means.",
     "*p* values controlled for false discovery rate based on",
     "Benjamini & Hochberg."
-  ) |> md()) |>
-  gtsave(filename = fname, path = fpath)
-rm(fname)
+  ) |> md())
+
+here(fpath, fnames[1]) |> saveRDS(object = tbl)
+for (f in fnames[-1]) gtsave(tbl, filename = f, path = fpath)
+rm(fnames, fpath)
 
 ### PLOTS
 ## Boxplot Kappas HC(VC)
