@@ -19,8 +19,6 @@ tmp/*
 libraries/*
 code/deprecated/*
 lists/deprecated/*
-conference/*
-paper_submission/*
 export/
 .README_nvim_rem
 .Renviron
