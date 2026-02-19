@@ -1,0 +1,6 @@
+/.quarto/
+**/*.quarto_ipynb
+_output/
+_freeze/
+figures_generated/
+manuscript.tex

@@ -1,0 +1,40 @@
+project:
+  type: default
+  output-dir: _output
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    css: styles.css
+  pdf:
+    documentclass: article
+    papersize: letter
+    geometry:
+      - margin=1in
+    toc: true
+    number-sections: true
+    colorlinks: true
+    keep-tex: true
+  docx:
+    toc: true
+    number-sections: true
+
+bibliography: references.bib
+# csl: human-brain-mapping.csl  # TODO: Download from Zotero Style Repository
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: auto
+
+knitr:
+  opts_chunk:
+    fig.path: "figures_generated/"
+    fig.width: 8
+    fig.height: 6
+    dpi: 300
+    dev: "png"
