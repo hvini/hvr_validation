@@ -1,6 +1,8 @@
 {
   "bioconductor.version": [],
-  "external.libraries": [],
+  "external.libraries": [
+    "/export02/data/sfernand/mamba/envs/hvr_valid2/lib/R/library"
+  ],
   "ignored.packages": [],
   "package.dependency.fields": [
     "Imports",
@@ -10,8 +12,9 @@
   "ppm.enabled": null,
   "ppm.ignored.urls": [],
   "r.version": [],
+  "snapshot.dev": false,
   "snapshot.type": "implicit",
-  "use.cache": true,
+  "use.cache": false,
   "vcs.ignore.cellar": true,
   "vcs.ignore.library": true,
   "vcs.ignore.local": true,

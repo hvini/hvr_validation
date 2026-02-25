@@ -68,7 +68,7 @@ affiliations:
 date: "2025-06-12"
 date-format: "D MMMM YYYY"
 abstract: |
-  The hippocampal-to-ventricle ratio (HVR) is a biomarker of medial temporal atrophy, particularly useful in the assessment of neurodegeneration in diseases such as Alzheimer's disease (AD). To minimize subjectivity and inter-rater variability, an automated, accurate, precise, and reliable segmentation technique for the hippocampus (HC) and surrounding cerebrospinal fluid (CSF) filled spaces---such as the temporal horns of the lateral ventricles---is essential. We trained and evaluated three automated methods for the segmentation of both HC and CSF (Multi-Atlas Label Fusion (MALF), Nonlinear Patch-Based Segmentation (NLPB), and a Convolutional Neural Network (CNN)). We then evaluated these methods, including the widely used FreeSurfer technique, using baseline T1w MRIs of 1641 participants from the AD Neuroimaging Initiative study with various degree of atrophy associated with their cognitive status on the spectrum from cognitively healthy to clinically probable AD. Our gold standard consisted in manual segmentation of HC and CSF from 80 cognitively healthy individuals. We calculated HC volumes and HVR and compared all methods in terms of segmentation reliability, similarity across methods, sensitivity in detecting between-group differences and associations with age, scores of the learning subtest of the Rey Auditory Verbal Learning Test (RAVLT) and the Alzheimer's Disease Assessment Scale 13 (ADAS13) scores. Cross validation demonstrated that the CNN method yielded more accurate HC and CSF segmentations when compared to MALF and NLPB, demonstrating higher volumetric overlap (Dice Kappa = 0.94) and correlation (rho = 0.99) with the manual labels. It was also the most reliable method in clinical data application, showing minimal failures. Our comparisons yielded high correlations between FreeSurfer, CNN and NLPB volumetric values. HVR yielded higher control:AD effect sizes than HC volumes among all segmentation methods, reinforcing the significance of HVR in clinical distinction. The positive association with age was significantly stronger for HVR compared to HC volumes on all methods except FreeSurfer. Memory associations with HC volumes or HVR were only significant for individuals with mild cognitive impairment. Finally, the HC volumes and HVR showed comparable negative associations with ADAS13, particularly in the mild cognitive impairment cohort. This study provides an evaluation of automated segmentation methods centered to estimate HVR, emphasizing the superior performance of a CNN-based algorithm. The findings underscore the pivotal role of accurate segmentation in HVR calculations for precise clinical applications, contributing valuable insights into medial temporal lobe atrophy in neurodegenerative disorders, especially AD.
+  The hippocampal-to-ventricle ratio (HVR) is a biomarker of medial temporal atrophy, particularly useful in the assessment of neurodegeneration in diseases such as Alzheimer's disease (AD). To minimize subjectivity and inter-rater variability, an automated, accurate, precise, and reliable segmentation technique for the hippocampus (HC) and surrounding cerebrospinal fluid (CSF) filled spaces---such as the temporal horns of the lateral ventricles---is essential. We trained and evaluated three automated methods for the segmentation of both HC and CSF (Multi-Atlas Label Fusion (MALF), Nonlinear Patch-Based Segmentation (NLPB), and a Convolutional Neural Network (CNN)). We then evaluated these methods, including the widely used FreeSurfer technique, using baseline T1w MRIs of 1641 participants from the AD Neuroimaging Initiative study with various degree of atrophy associated with their cognitive status on the spectrum from cognitively healthy to clinically probable AD. Our gold standard consisted in manual segmentation of HC and CSF from 80 cognitively healthy individuals. We calculated HC volumes and HVR and compared all methods in terms of segmentation reliability, similarity across methods, sensitivity in detecting between-group differences and associations with age, scores of the learning subtest of the Rey Auditory Verbal Learning Test (RAVLT) and the Alzheimer's Disease Assessment Scale 13 (ADAS13) scores. Cross validation demonstrated that the CNN method yielded more accurate HC and CSF segmentations when compared to MALF and NLPB, demonstrating higher volumetric overlap (Dice Kappa = 0.94) and correlation ($\rho$ = 0.99) with the manual labels. It was also the most reliable method in clinical data application, showing minimal failures. Our comparisons yielded high correlations between FreeSurfer, CNN and NLPB volumetric values. HVR yielded higher control:AD effect sizes than HC volumes among all segmentation methods, reinforcing the significance of HVR in clinical distinction. The positive association with age was significantly stronger for HVR compared to HC volumes on all methods except FreeSurfer. Memory associations with HC volumes or HVR were only significant for individuals with mild cognitive impairment. Finally, the HC volumes and HVR showed comparable negative associations with ADAS13, particularly in the mild cognitive impairment cohort. This study provides an evaluation of automated segmentation methods centered to estimate HVR, emphasizing the superior performance of a CNN-based algorithm. The findings underscore the pivotal role of accurate segmentation in HVR calculations for precise clinical applications, contributing valuable insights into medial temporal lobe atrophy in neurodegenerative disorders, especially AD.
 keywords:
   - Alzheimer's disease
   - automatic segmentation
@@ -81,11 +81,22 @@ format:
   html:
     toc: true
   pdf:
+    toc: false
     documentclass: article
     papersize: letter
     geometry:
       - margin=1in
     keep-tex: true
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \usepackage{longtable}
+        \usepackage{booktabs}
+        \usepackage{array}
+        \usepackage{makecell}
+        \setlength{\LTleft}{\fill}
+        \setlength{\LTright}{\fill}
 ---
 
 <!--
@@ -109,25 +120,42 @@ library(ggplot2)
 library(gt)
 library(ggtext)
 library(ggsignif)
-library(GGally)
 library(bootES)
 library(WRS2)
 library(gridExtra)
 library(stringr)
 library(ggridges)
 library(ggnewscale)
-library(cowplot)
 library(png)
 library(grid)
 
 # Set here() root to project directory (parent of quarto/)
 here::i_am("quarto/manuscript.qmd")
 
+# Define median_hilow (avoids Hmisc dependency)
+median_hilow <- function(x, ...) {
+  qs <- quantile(x, c(0.025, 0.5, 0.975), na.rm = TRUE)
+  data.frame(y = qs[2], ymin = qs[1], ymax = qs[3])
+}
+
 # Color palette (colorblind-friendly)
 cb_palette <- cbPalette <- c(
   "#999999", "#E69F00", "#56B4E9", "#009E73",
   "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
 )
+
+# Style function for manuscript tables (longtable, no footnotes)
+style_manuscript_table <- function(gt_tbl, table_type = "main") {
+  font_size <- if (table_type == "main") "10pt" else "9pt"
+  gt_tbl |>
+    sub_missing(missing_text = "-") |>
+    tab_options(
+      table.font.size = font_size,
+      column_labels.font.size = font_size,
+      column_labels.font.weight = "bold",
+      latex.use_longtable = TRUE
+    )
+}
 ```
 
 ```{r}
@@ -197,6 +225,29 @@ effect_sizes_hvr_sims <- if (file.exists(here("data/rds/adni-bl_effect-sizes_hvr
 corr_data <- if (file.exists(here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds"))) {
   readRDS(here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds"))
 } else NULL
+
+# Load validation volume data for Figures S2-S3
+val_vols <- NULL
+fpath_val <- here("data/derivatives/man-seg_volumes_hc_adni.csv")
+if (file.exists(fpath_val)) {
+  val_vols <- fpath_val |>
+    fread(drop = "HC") |>
+    melt(measure = patterns("HC"), variable = "SIDE") |>
+    (\(DT) {
+      DT[
+        , let(
+          SEGM = fifelse(ID %like% "cnn", "CNN", "MAN"),
+          SIDE = factor(SIDE, labels = c("Left", "Right")),
+          ROI = "Hippocampus",
+          value = value / 1000
+        )
+      ]
+      DT[, ID := sub("hc_adni_(man|cnn)_", "", ID)]
+      adni_groups[!duplicated(ID), GROUP, keyby = ID][DT]
+    })() |>
+    dcast(... ~ SEGM, value.var = "value") |>
+    setcolorder(c("ID"))
+}
 ```
 
 # Introduction {#sec-intro}
@@ -290,7 +341,7 @@ The NLPB and MALF segmentations have already been validated on their respective 
 
 We evaluated the different automatic segmentation techniques by applying them to the baseline data from ADNI. The first comparison was the percentage of failure for the different methods. An expert visually inspected the output of the trained automatic methods and discarded any segmentation that did not pass quality control. For the HC volumes from FreeSurfer versions 4.3 & 5.1, we assumed failure for any missing value on the UCSF volumes files reported by ADNI.
 
-We then compared the different methods by evaluating for both HCvol and HVR: (1) the similarity across segmentations, and (2) the sensitivity of the different methods in detecting between-group differences. To measure the similarity between methods, we used the Spearman's rank correlation coefficient between the computed hippocampal measures---stratified by clinical label. For the sensitivity comparison, we computed the standardized effect size estimates and their robust confidence intervals (CIs) of the difference between the hippocampal measures between the patients with dementia and the cognitively normal subjects. We used Glass' Δ, where the comparison of the means is standardized only by the control's group standard deviation:
+We then compared the different methods by evaluating for both HCvol and HVR: (1) the similarity across segmentations, and (2) the sensitivity of the different methods in detecting between-group differences. To measure the similarity between methods, we used the Spearman's rank correlation coefficient between the computed hippocampal measures---stratified by clinical label. For the sensitivity comparison, we computed the standardized effect size estimates and their robust confidence intervals (CIs) of the difference between the hippocampal measures between the patients with dementia and the cognitively normal subjects. We used Glass' $\Delta$, where the comparison of the means is standardized only by the control's group standard deviation:
 
 $$
 \Delta = \frac{M_{AD} - M_{CN}}{\sigma_{CN}}
@@ -313,11 +364,11 @@ To facilitate adoption, we developed a Docker container for the CNN-based segmen
 
 # Results {#sec-results}
 
-Our sample consisted of 1641 participants in ADNI-1, ADNI-Go, and ADNI 2: 501 CH participants, 819 individuals with MCI, and 321 patients with clinically probable AD. All demographic and clinical measures were significantly different among the three groups (@tbl-demographics). The Chi-squared test showed significant differences of sex for the CH (p=0.002) and MCI (p=0.004) groups, but not for AD (p=1). The post hoc analysis using Dunn's test showed that participants in the MCI group were significantly younger than those of the CH group (Z=2.6, p=0.014) and the AD group (Z=4.03, p<0.001). However, the age difference between the CH and AD groups was non-significant (Z=1.65, p=0.15). The CH group also appeared to be on average slightly more educated compared to both the MCI group (Z=2.64, p=0.012) and the AD group (Z=−5.59, p<0.001). The difference between the MCI and AD groups was also significant (Z=−3.8, p<0.001).
+Our sample consisted of 1641 participants in ADNI-1, ADNI-Go, and ADNI 2: 501 CH participants, 819 individuals with MCI, and 321 patients with clinically probable AD. All demographic and clinical measures were significantly different among the three groups (@tbl-demographics). The Chi-squared test showed significant differences of sex for the CH (p=0.002) and MCI (p=0.004) groups, but not for AD (p=1). The post hoc analysis using Dunn's test showed that participants in the MCI group were significantly younger than those of the CH group (Z=2.6, p=0.014) and the AD group (Z=4.03, p<0.001). However, the age difference between the CH and AD groups was non-significant (Z=1.65, p=0.15). The CH group also appeared to be on average slightly more educated compared to both the MCI group (Z=2.64, p=0.012) and the AD group (Z=-5.59, p<0.001). The difference between the MCI and AD groups was also significant (Z=-3.8, p<0.001).
 
 ```{r}
 #| label: tbl-demographics
-#| tbl-cap: "Baseline demographics and cognitive data. Sex distribution, age, education, and scores for ADAS-13 and the learning subtest of the RAVLT for the CH, MCI and AD groups of the ADNI baseline dataset."
+#| tbl-cap: "Baseline demographics and cognitive data. Sex distribution, age, education, and scores for ADAS-13 and the learning subtest of the RAVLT for the CH, MCI and AD groups of the ADNI baseline dataset. Values are Mean (SD). Sex is reported as N (%). Missing indicates N of subjects without cognitive data."
 
 # Generate demographics table from ADNIMERGE data
 # First, get volume data to filter to subjects with CNN segmentations
@@ -369,7 +420,6 @@ tbl_data <- rbind(demog_summary, sex_summary, missing_summary, use.names = TRUE)
 # Create gt table (matching original code pattern)
 gt(tbl_data, rowname_col = "VAR", process_md = TRUE) |>
   tab_spanner(label = "Clinical Label", columns = c("CH", "MCI", "AD")) |>
-  tab_options(footnotes.multiline = FALSE) |>
   cols_align("center", columns = c("CH", "MCI", "AD")) |>
   cols_label(
     CH = md(sprintf("**CH**, N: %i", demog_dt["CH", on = "DX", .N])),
@@ -378,32 +428,21 @@ gt(tbl_data, rowname_col = "VAR", process_md = TRUE) |>
   ) |>
   tab_stub_indent(rows = starts_with("NA"), indent = 3) |>
   sub_values(values = c("NA_ADAS13", "NA_RAVLT"), replacement = "Missing") |>
-  tab_footnote(
-    footnote = "N (%).",
-    locations = cells_stub(rows = contains("Sex"))
-  ) |>
-  tab_footnote(
-    footnote = "N of subjects without cognitive data.",
-    locations = cells_stub(rows = contains("NA"))
-  ) |>
-  tab_footnote(
-    footnote = "Mean (SD).",
-    locations = cells_stub(rows = c(2:4, 6))
-  )
+  style_manuscript_table()
 ```
 
 
 ## Training of the Automatic Segmentation Methods {#sec-results-training}
 
-We trained three automatic segmentation methods---MALF, NLPB, and CNN---using a set of manually segmented labels of HC and CSF. @fig-segmentation presents the results of this training as violin plots of the volumetric overlap with the manual labels and one example subject's manual and computed labels from all three methods. Accuracy and specificity for both HC and CSF segmentations approached 1.0 across all methods and are therefore not included in the figure. The median and standard deviation values for all five segmentation performance metrics (accuracy, Dice coefficient, Cohen's kappa, sensitivity and specificity for bilateral HC and CSF) are reported in Table S1. The robust repeated-measures two-way ANOVA revealed significant differences between the segmentation methods across all five performance metrics (Table S2). Pairwise comparisons showed laterality effects in HC segmentation only for MALF (kappa and sensitivity, both FDR-adjusted p=0.009). In contrast, significant side differences were observed on all three methods for ventricular segmentation: Dice coefficient differences were significant on all methods (FDR-adjusted p≤0.001); kappa and sensitivity differences were also significant for NLPB and CNN (FDR-adjusted p<0.05). Robust effect-sizes (ψ), 95% confidence intervals and FDR-adjusted p-values are reported in Table S3 of the Supporting Information.
+We trained three automatic segmentation methods---MALF, NLPB, and CNN---using a set of manually segmented labels of HC and CSF. @fig-segmentation presents the results of this training as violin plots of the volumetric overlap with the manual labels and one example subject's manual and computed labels from all three methods. Accuracy and specificity for both HC and CSF segmentations approached 1.0 across all methods and are therefore not included in the figure. The median and standard deviation values for all five segmentation performance metrics (accuracy, Dice coefficient, Cohen's kappa, sensitivity and specificity for bilateral HC and CSF) are reported in Table S1. The robust repeated-measures two-way ANOVA revealed significant differences between the segmentation methods across all five performance metrics (Table S2). Pairwise comparisons showed laterality effects in HC segmentation only for MALF (kappa and sensitivity, both FDR-adjusted p=0.009). In contrast, significant side differences were observed on all three methods for ventricular segmentation: Dice coefficient differences were significant on all methods (FDR-adjusted $p \leq 0.001$); kappa and sensitivity differences were also significant for NLPB and CNN (FDR-adjusted p<0.05). Robust effect-sizes ($\psi$), 95% confidence intervals and FDR-adjusted p-values are reported in Table S3 of the Supporting Information.
 
-Across pairwise comparisons, CNN significantly outperformed both MALF and NLPB across all five segmentation performance metrics for both HC and CSF. Differences were especially pronounced for Dice coefficient, Cohen's kappa, and sensitivity with robust effect sizes (ψ) consistently exceeding 0.04 for the HC and 0.15 for CSF (all, FDR-adjusted p<0.001). While MALF outperformed NLPB in some of the HC metrics (kappa and sensitivity, ψ≈0.01, FDR-adjusted p≤0.001), the differences were inconsistent for CSF (Tables S4 and S5).
+Across pairwise comparisons, CNN significantly outperformed both MALF and NLPB across all five segmentation performance metrics for both HC and CSF. Differences were especially pronounced for Dice coefficient, Cohen's kappa, and sensitivity with robust effect sizes ($\psi$) consistently exceeding 0.04 for the HC and 0.15 for CSF (all, FDR-adjusted p<0.001). While MALF outperformed NLPB in some of the HC metrics (kappa and sensitivity, $\psi \approx 0.01$, FDR-adjusted $p \leq 0.001$), the differences were inconsistent for CSF (Tables S4 and S5).
 
 ```{r}
 #| label: fig-segmentation
-#| fig-cap: "**Automatic segmentation performance.** (Left) Example of manual and computed (MALF, NLPB, CNN) segmentations of HC (yellow) and CSF (blue) overlaid on the original T1w MRI. (Right) Violin plots of the distributions of the overlap and accuracy metrics (Dice, Kappa, and Sensitivity) between manual and computed segmentations of the HC and ventricles from the left (red) and right (blue) hemispheres using MALF, NLPB and CNN. The median and standard deviation are represented inside the violin plots. Comparison lines above the violin plots show statistical pair-wise difference between the segmentation methods (*** = p < 0.001)."
-#| fig-width: 12
-#| fig-height: 5
+#| fig-cap: "**Automatic segmentation performance.** Left: Violin plots of the distributions of the overlap and accuracy metrics (Dice, Kappa, and Sensitivity) between manual and computed segmentations of the HC and ventricles from the left (red) and right (blue) hemispheres using MALF, NLPB and CNN. The median and standard deviation are represented inside the violin plots. Comparison lines above the violin plots show statistical pair-wise difference between the segmentation methods (*** = p < 0.001). Right: Mosaic images of the manual and computed segmentations for an example subject."
+#| fig-width: 6.5
+#| fig-height: 3.25
 
 # Load mosaic example image
 mosaic_path <- here("plots/figp1_man-seg_example.png")
@@ -426,10 +465,11 @@ segm_data <- segm_kappa |>
 
 # Run statistical comparisons for annotation
 segms <- c("MALF", "NLPB", "CNN")
+p.crit <- 0.05
 annotation_list <- list()
 
 for (roi_val in c("HC", "VC")) {
-  for (msr_val in c("dice", "kappa", "sens")) {
+  for (msr_val in c("dice", "kappa", "sensitivity")) {
     # Run robust ANOVA and post-hoc tests
     subset_data <- segm_data[ROI == roi_val & MSR == msr_val]
 
@@ -478,7 +518,7 @@ if (nrow(annotation_dt) > 0) {
 
 # Create violin plot
 plot_data <- segm_data[
-  MSR %in% c("dice", "kappa", "sens"),
+  MSR %in% c("dice", "kappa", "sensitivity"),
   .(
     SEGM = factor(SEGM, levels = c("MALF", "NLPB", "CNN")),
     SIDE = factor(SIDE, labels = c("Left", "Right")),
@@ -489,10 +529,10 @@ plot_data <- segm_data[
 ]
 
 p <- ggplot(plot_data, aes(x = SEGM, y = VAL)) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 8) +
   theme(
-    text = element_text(size = 12),
-    axis.text = element_text(size = 10),
+    text = element_text(size = 8),
+    axis.text = element_text(size = 7),
     axis.title.x = element_markdown(),
     legend.position = "none"
   ) +
@@ -506,10 +546,10 @@ p <- ggplot(plot_data, aes(x = SEGM, y = VAL)) +
   stat_summary(
     aes(colour = SIDE),
     position = position_dodge(width = 0.95),
-    fun.data = "median_hilow",
+    fun.data = median_hilow,
     geom = "pointrange",
-    size = 0.01,
-    linewidth = 0.2
+    size = 0.15,
+    linewidth = 0.4
   ) +
   scale_colour_manual(values = c("darkred", "midnightblue")) +
   scale_fill_manual(values = c("darkred", "midnightblue")) +
@@ -543,16 +583,16 @@ if (nrow(annotation_dt) > 0) {
 
 # Combine mosaic image with violin plot using cowplot
 if (exists("mosaic_grob")) {
-  # Create panel A (mosaic) and panel B (violin)
-  panel_a <- ggdraw() + draw_grob(mosaic_grob)
-  panel_b <- p
+  # Create panel A (violin) and panel B (mosaic)
+  panel_a <- p
+  panel_b <- cowplot::ggdraw() + cowplot::draw_grob(mosaic_grob)
 
   # Combine with labels
-  combined_plot <- plot_grid(
+  combined_plot <- cowplot::plot_grid(
     panel_a, panel_b,
     labels = c("A", "B"),
     label_size = 14,
-    rel_widths = c(1, 1.2),
+    rel_widths = c(1.5, 1),
     nrow = 1
   )
   print(combined_plot)
@@ -561,13 +601,13 @@ if (exists("mosaic_grob")) {
 }
 ```
 
-@fig-correlation shows correlations between volumes obtained from the original manual labels and those from computed segmentations. All associations were significant (FDR-adjusted p<0.001). The Spearman's rho values for the CNN method were almost 1 (ρ≈0.98) for both HCvol and CSFvol on both left and right sides. While the correlations were lower for NLPB, they still showed strong associations with the manual labels (HCvol, ρ=0.90; CSFvol, ρ=0.79). MALF showed the lowest correlations among the three methods (HCvol, ρ=0.86; CSFvol, ρ=0.57).
+@fig-correlation shows correlations between volumes obtained from the original manual labels and those from computed segmentations. All associations were significant (FDR-adjusted p<0.001). The Spearman's rho values for the CNN method were almost 1 ($\rho \approx 0.98$) for both HCvol and CSFvol on both left and right sides. While the correlations were lower for NLPB, they still showed strong associations with the manual labels (HCvol, $\rho = 0.90$; CSFvol, $\rho = 0.79$). MALF showed the lowest correlations among the three methods (HCvol, $\rho = 0.86$; CSFvol, $\rho = 0.57$).
 
 ```{r}
 #| label: fig-correlation
-#| fig-cap: "**Relationship between manual and computed hippocampal (HCvol) and ventricular (CSFvol) volumes.** Scatter plots of the volumes (measured in cc) of the left and right HC and ventricular space from the manual segmentations against those obtained from MALF (blue), NLPB (green), and CNN (orange). The Spearman's rank correlation coefficients (ρ) and their significance are added for each automatic method."
-#| fig-width: 8
-#| fig-height: 6
+#| fig-cap: "**Relationship between manual and computed hippocampal (HCvol) and ventricular (CSFvol) volumes.** Scatter plots of the volumes (measured in cc) of the left and right HC and ventricular space from the manual segmentations against those obtained from MALF (blue), NLPB (pink), and CNN (orange). The Spearman's rank correlation coefficients ($\\rho$) and their significance are added for each automatic method."
+#| fig-width: 4
+#| fig-height: 4
 
 # Process volume data for correlation plots
 # Data has columns: ID, LHC, RHC, HC, LCSF, RCSF, CSF, METHOD
@@ -605,12 +645,13 @@ corr_plot_data <- manual_vols[computed_vols, on = .(SUBJ_ID, SIDE, ROI)]
 # Ensure proper SEGM factor ordering
 corr_plot_data[, SEGM := factor(SEGM, levels = c("MALF", "NLPB", "CNN"))]
 
-# Create scatter plot matching original code
+# Create scatter plot matching published figure colors:
+# MALF = blue, NLPB = green, CNN = orange
 p <- ggplot(corr_plot_data, aes(x = CC, y = MAN, colour = SEGM)) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 10) +
   theme(
-    text = element_text(size = 12),
-    axis.text = element_text(size = 10),
+    text = element_text(size = 10),
+    axis.text = element_text(size = 8),
     axis.title.x = element_markdown(),
     legend.position = "none"
   ) +
@@ -623,17 +664,18 @@ p <- ggplot(corr_plot_data, aes(x = CC, y = MAN, colour = SEGM)) +
   geom_smooth(method = "lm", alpha = .2, linewidth = .5) +
   geom_point(size = 2, shape = 21) +
   ggpubr::stat_cor(
-    aes(label = ..r.label..),
+    aes(label = after_stat(r.label), colour = SEGM),
     r.accuracy = 0.001,
     size = 2.7,
     cor.coef.name = "rho",
     label.x.npc = "right",
     label.y.npc = "bottom",
     hjust = "inward",
-    method = "spearman"
+    method = "spearman",
+    show.legend = FALSE
   ) +
   facet_grid(rows = vars(ROI), cols = vars(SIDE), scales = "free") +
-  scale_colour_manual(values = cbPalette[c(2:3, 8)]) +
+  scale_colour_manual(values = cbPalette[c(3, 8, 2)]) +
   labs(
     y = "Manually segmented volumes",
     x = paste(
@@ -652,13 +694,13 @@ The Bland–Altman plots in @fig-blandaltman show that in addition to having lar
 ```{r}
 #| label: fig-blandaltman
 #| fig-cap: "**Bland-Altman plots.** Bland-Altman plots for the volumetric comparison between mean HCvol and CSFvol (in cc) resulting from the automatic segmentation methods and manual labels. The dashed lines represent the mean difference (orange) and the upper and lower limits of agreement (blue)."
-#| fig-width: 7
-#| fig-height: 4
+#| fig-width: 6.5
+#| fig-height: 3.7
 
 # Calculate Bland-Altman statistics matching original code
-DT <- corr_plot_data[
-  , SEGM := factor(SEGM, levels = c("MALF", "NLPB", "CNN"))
-][
+DT <- copy(corr_plot_data)
+DT[, SEGM := factor(SEGM, levels = c("MALF", "NLPB", "CNN"))]
+DT <- DT[
   , .(
     AVG = (CC + MAN) / 2,
     DIFF = CC - MAN
@@ -676,10 +718,10 @@ DT <- corr_plot_data[
 
 # Create Bland-Altman plot matching original code
 p <- ggplot(DT, aes(x = AVG, y = DIFF)) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 11) +
   theme(
-    text = element_text(size = 12),
-    axis.text = element_text(size = 10),
+    text = element_text(size = 11),
+    axis.text = element_text(size = 9),
     axis.title.x = element_markdown(),
     legend.position = "none"
   ) +
@@ -756,9 +798,9 @@ Out-of-sample validation on 60 manually segmented MRIs from the ADNI dataset con
 
 Visual inspection of the violin plots (Figure S1) shows consistency among the clinical groups and suggests a laterality effect on the segmentation particularly for the MCI and AD groups. This side difference resulted significant in the robust two-way mixed ANOVA for kappa, F (1, 25.03)=8.48, and sensitivity, F (1, 25.12)=8.47; both FDR-adjusted p=0.37. Neither clinical group nor the interaction between group and clinical label were significant (Table S7).
 
-The strength of the association between HCvol computed from the CNN-based segmentation and the manually segmented was consistent across the clinical groups, with Spearman's rank correlation coefficients high in all groups, ranging from ρ=0.94 in AD and CH to ρ=0.96 in MCI (Figure S2). When stratified by hemisphere, correlations were slightly lower on the right HC of AD subjects (ρ=0.90) compared to the left (ρ=0.96). This difference was consistent, although slightly weaker in the MCI group (ρ=0.93 vs. ρ=0.96), but not in the healthy cohort (ρ≈0.94).
+The strength of the association between HCvol computed from the CNN-based segmentation and the manually segmented was consistent across the clinical groups, with Spearman's rank correlation coefficients high in all groups, ranging from $\rho = 0.94$ in AD and CH to $\rho = 0.96$ in MCI (Figure S2). When stratified by hemisphere, correlations were slightly lower on the right HC of AD subjects ($\rho = 0.90$) compared to the left ($\rho = 0.96$). This difference was consistent, although slightly weaker in the MCI group ($\rho = 0.93$ vs. $\rho = 0.96$), but not in the healthy cohort ($\rho \approx 0.94$).
 
-Bland–Altman plots for HCvol segmented on the three cohorts of the ADNI out-of-sample dataset are presented in Figure S3. Mean differences were close to zero in all groups (CH: 0.04, MCI: –0.04, AD: −0.02), with relatively narrow limits of agreement.
+Bland–Altman plots for HCvol segmented on the three cohorts of the ADNI out-of-sample dataset are presented in Figure S3. Mean differences were close to zero in all groups (CH: 0.04, MCI: –0.04, AD: -0.02), with relatively narrow limits of agreement.
 
 
 ## Application on Clinical Data {#sec-results-clinical}
@@ -767,7 +809,7 @@ We applied the three trained automatic segmentation methods and compared them to
 
 ```{r}
 #| label: tbl-volumes
-#| tbl-cap: "Summary of hippocampal volumes (HCvol), hippocampal-to-ventricle ratio (HVR), and segmentation failures. Mean and standard deviation of the obtained HCvol and calculated HVR, along with the number of segmentation failures for each automatic segmentation method."
+#| tbl-cap: "Summary of hippocampal volumes (HCvol), hippocampal-to-ventricle ratio (HVR), and segmentation failures. Mean and standard deviation of the obtained HCvol and calculated HVR, along with the number of segmentation failures for each automatic segmentation method. Values are Mean (SD). Failures: N of failed segmentations. Missing: N of unreported cases from ADNI."
 
 # Prepare volume data for Table 2
 vol_data <- adnimerge[, .(PTID, DX)] |>
@@ -820,30 +862,18 @@ tbl_combined[, variable := fcase(
 # Add N to method names while preserving order
 method_n <- vol_data[, .(N = sum(!is.na(HC))), by = METHOD]
 method_order <- c("MALF", "NLPB", "CNN", "FS_V4_V5", "FS_V6")
-method_labels <- method_n[, sprintf(
-  "**%s**, N: %s",
-  fcase(
-    METHOD == "FS_V4_V5", "FreeSurfer v4.3 & v5.1",
-    METHOD == "FS_V6", "FreeSurfer v6.0",
-    default = as.character(METHOD)
-  ),
-  format(N, big.mark = ",")
-), by = METHOD][match(method_order, METHOD), V1]
+display_names <- c(MALF = "MALF", NLPB = "NLPB", CNN = "CNN",
+                   FS_V4_V5 = "FreeSurfer v4.3 & v5.1",
+                   FS_V6 = "FreeSurfer v6.0")
+method_labels <- vapply(method_order, \(m) {
+  sprintf("**%s**, N: %s", display_names[m],
+          format(method_n[as.character(METHOD) == m, N], big.mark = ","))
+}, character(1), USE.NAMES = FALSE)
 
-tbl_combined[, METHOD := factor(
-  fcase(
-    METHOD == "FS_V4_V5", "FreeSurfer v4.3 & v5.1",
-    METHOD == "FS_V6", "FreeSurfer v6.0",
-    default = as.character(METHOD)
-  ),
-  levels = c("MALF", "NLPB", "CNN", "FreeSurfer v4.3 & v5.1", "FreeSurfer v6.0")
-)]
-tbl_combined[method_n, on = "METHOD", METHOD := sprintf(
-  "**%s**, N: %s",
-  as.character(METHOD),
-  format(N, big.mark = ",")
-)]
-# Restore factor ordering after sprintf
+# Map METHOD to display labels (convert to character first to avoid factor issues)
+tbl_combined[, METHOD := method_labels[
+  match(as.character(METHOD), method_order)
+]]
 tbl_combined[, METHOD := factor(METHOD, levels = method_labels)]
 
 # Create gt table
@@ -853,7 +883,6 @@ n_by_dx <- vol_data[!duplicated(PTID), .N, by = DX]
 
 gt(tbl_wide, rowname_col = "variable", groupname_col = "METHOD", process_md = TRUE) |>
   tab_spanner(label = "Clinical Label", columns = c("CH", "MCI", "AD")) |>
-  tab_options(footnotes.multiline = FALSE) |>
   cols_align("center", columns = c("CH", "MCI", "AD")) |>
   cols_label(
     CH = md(sprintf("**CH**, N: %i", n_by_dx["CH", on = "DX", N])),
@@ -861,30 +890,18 @@ gt(tbl_wide, rowname_col = "variable", groupname_col = "METHOD", process_md = TR
     AD = md(sprintf("**AD**, N: %i", n_by_dx["AD", on = "DX", N]))
   ) |>
   tab_stub_indent(rows = everything(), indent = 2) |>
-  sub_missing(missing_text = "-") |>
-  tab_footnote(
-    footnote = "Mean (SD).",
-    locations = cells_stub(rows = contains("H"))
-  ) |>
-  tab_footnote(
-    footnote = "N of failed segmentations.",
-    locations = cells_stub(rows = matches("Failures"))
-  ) |>
-  tab_footnote(
-    footnote = "N of unreported cases from ADNI.",
-    locations = cells_stub(rows = matches("Missing"))
-  )
+  style_manuscript_table()
 ```
 
 The method with the least successful segmentations was FreeSurfer v4.3/v5.1, with ADNI reporting the HC values for only 86% of the data. FreeSurfer v6.0 and MALF had a similar number of successful segmentations (98.5%), MALF tended to fail more on AD and MCI participants, while FreeSurfer's errors were equally distributed between all groups. Among all methods, CNN was the most reliable, failing on only two cases (one MCI and one AD).
 
-The comparisons between segmentation methods in terms of volumetric correlation and effect size between CH individuals and patients with AD are presented in @fig-similarity-hc. HC volumes obtained from the FreeSurfer, CNN and NLPB segmentations were all highly correlated with each other (ρ>0.9, p<0.001), with the FreeSurfer versions being the most similar between each other (ρ=0.99). The correlations coefficients for MALF, the least similar method, ranged between 0.67–0.78. Even after stratifying the comparisons by clinical groups, we still found high similarity between FreeSurfer versions and CNN (ρ>0.97, between FreeSurfer versions; ρ>0.91, CNN & FreeSurfer). Across all methods, the lowest correlation coefficients were found on the AD group (ρ=0.4–0.98).
+The comparisons between segmentation methods in terms of volumetric correlation and effect size between CH individuals and patients with AD are presented in @fig-similarity-hc. HC volumes obtained from the FreeSurfer, CNN and NLPB segmentations were all highly correlated with each other ($\rho > 0.9$, p<0.001), with the FreeSurfer versions being the most similar between each other ($\rho = 0.99$). The correlations coefficients for MALF, the least similar method, ranged between 0.67–0.78. Even after stratifying the comparisons by clinical groups, we still found high similarity between FreeSurfer versions and CNN ($\rho > 0.97$, between FreeSurfer versions; $\rho > 0.91$, CNN & FreeSurfer). Across all methods, the lowest correlation coefficients were found on the AD group ($\rho = 0.4$–$0.98$).
 
 ```{r}
 #| label: fig-similarity-hc
-#| fig-cap: "**Similarity of segmentation and clinical effect sizes of HCvol.** The lower triangle of the matrix plot shows scatter plots of the HCvol values across the different automatic segmentation methods stratified by the clinical group (CH: Orange, MCI: Blue, and AD: Green). The upper triangle of the matrix plots lists the correlation coefficients between the automatic segmentation methods using Spearman's rank correlation. The diagonal of the matrix plot shows the density plots of the HCvol by clinical group."
-#| fig-width: 8
-#| fig-height: 6
+#| fig-cap: "**Similarity of segmentation and clinical effect sizes of HCvol.** The lower triangle of the matrix plot shows scatter plots of the HCvol values across the different automatic segmentation methods stratified by the clinical group (CH: Orange, MCI: Blue, and AD: Green). The upper triangle of the matrix plots lists the correlation coefficients between the automatic segmentation methods using Spearman's rank correlation. The correlation coefficients ($\\rho$) include the values for the whole sample in gray and by clinical group. The diagonal of the matrix plot shows the density plots of the HCvol by clinical group. Dashed lines represent the mean of each cohort. Inside each density plot, the inlaid box shows calculated effect sizes between the CH and AD groups using Glass' Delta and their robust 95% confidence intervals."
+#| fig-width: 6.5
+#| fig-height: 4.9
 
 # Load pre-computed effect sizes (Glass' delta with bootstrap CI)
 hc_effect_file <- here("data/rds/adni-bl_effect-sizes_hc_dx.rds")
@@ -911,7 +928,7 @@ diag_fun <- function(data, mapping, labels.dt, ...) {
 
   # Add mean lines and effect size labels
   p +
-    theme(text = element_text(size = 10)) +
+    theme(text = element_text(size = 8)) +
     stat_summary(
       aes(xintercept = after_stat(x), y = 0),
       data = data,
@@ -925,7 +942,7 @@ diag_fun <- function(data, mapping, labels.dt, ...) {
     geom_richtext(
       aes(label = LABEL),
       data = labels.dt[labels.dt$METHOD == as_label(mapping$x), ],
-      size = 2.5,
+      size = 2,
       colour = "Black",
       fill = "White",
       alpha = 1,
@@ -937,31 +954,31 @@ diag_fun <- function(data, mapping, labels.dt, ...) {
 }
 
 # Create ggpairs plot for HC
-p_hc <- ggpairs(
+p_hc <- GGally::ggpairs(
   hc_wide,
   columns = method_cols,
   mapping = aes(colour = DX, alpha = 0.7),
-  upper = list(continuous = wrap("cor", method = "spearman", stars = FALSE)),
-  diag = list(continuous = wrap(diag_fun, labels.dt = hc_labels_dt)),
-  lower = list(continuous = wrap("points", size = 0.65, shape = 21))
+  upper = list(continuous = GGally::wrap("cor", method = "spearman", stars = FALSE)),
+  diag = list(continuous = GGally::wrap(diag_fun, labels.dt = hc_labels_dt)),
+  lower = list(continuous = GGally::wrap("points", size = 0.65, shape = 21))
 ) +
-  theme_classic(base_size = 10) +
-  theme(text = element_text(size = 10)) +
+  theme_classic(base_size = 8) +
+  theme(text = element_text(size = 8)) +
   scale_fill_manual(values = cbPalette[c(2, 3, 8)]) +
   scale_colour_manual(values = cbPalette[c(2, 3, 8)])
 
 print(p_hc)
 ```
 
-Effect sizes calculated using Glass' delta follow the conventional interpretation of Cohen's d small, medium, and large effect sizes defined as d<0.5, 0.5<d<0.8, and d>0.8, respectively. We found large effect sizes on the HCvol difference between CH and AD groups for all segmentation methods except MALF. The methods, from worst to best, were MALF (Δ=−0.78), NLPB (Δ=−1.54), FreeSurfer (Δ=−1.76 – −1.78), and CNN (Δ=−1.85). Comparing the CH:AD effect sizes between the segmentation methods, the only significant differences (based on the calculated confidence intervals) were observed on those from MALF, which were lower compared to the other three automatic methods.
+Effect sizes calculated using Glass' delta follow the conventional interpretation of Cohen's d small, medium, and large effect sizes defined as d<0.5, 0.5<d<0.8, and d>0.8, respectively. We found large effect sizes on the HCvol difference between CH and AD groups for all segmentation methods except MALF. The methods, from worst to best, were MALF ($\Delta = -0.78$), NLPB ($\Delta = -1.54$), FreeSurfer ($\Delta = -1.76$ – $-1.78$), and CNN ($\Delta = -1.85$). Comparing the CH:AD effect sizes between the segmentation methods, the only significant differences (based on the calculated confidence intervals) were observed on those from MALF, which were lower compared to the other three automatic methods.
 
-Using the values for HCvol and CSFvol, we calculated the HVR for all segmentation methods; the mean and standard deviation for the HVR values by clinical group are given in @tbl-volumes. HVR values were larger for the FreeSurfer-based estimates. The correlations between methods and the comparison of effect sizes between CH and AD are presented in @fig-similarity-hvr. The similarity across methods was higher for HVR (compared to HCvol) with the correlation coefficients ranging from 0.89 (MALF & FreeSurfer) to 0.97 (CNN & FreeSurfer). As with HCvol, the lower correlations were found in the AD group (ρ=0.77–0.97). All four segmentation methods had large effect sizes between CH and AD when using HVR. The magnitudes of the effect size from HVR were larger than those calculated with HCvol; nonetheless, the HVR vs. HCvol difference in effect size only reached significance for MALF. Ordered from lowest to highest value, the methods were MALF (Δ=−1.24), NLPB (Δ=−1.73), CNN (Δ=−1.86), and FreeSurfer (Δ=−2.02). The effect size obtained with MALF was significantly lower than the other methods. None of the other differences across methods were significant.
+Using the values for HCvol and CSFvol, we calculated the HVR for all segmentation methods; the mean and standard deviation for the HVR values by clinical group are given in @tbl-volumes. HVR values were larger for the FreeSurfer-based estimates. The correlations between methods and the comparison of effect sizes between CH and AD are presented in @fig-similarity-hvr. The similarity across methods was higher for HVR (compared to HCvol) with the correlation coefficients ranging from 0.89 (MALF & FreeSurfer) to 0.97 (CNN & FreeSurfer). As with HCvol, the lower correlations were found in the AD group ($\rho = 0.77$–$0.97$). All four segmentation methods had large effect sizes between CH and AD when using HVR. The magnitudes of the effect size from HVR were larger than those calculated with HCvol; nonetheless, the HVR vs. HCvol difference in effect size only reached significance for MALF. Ordered from lowest to highest value, the methods were MALF ($\Delta = -1.24$), NLPB ($\Delta = -1.73$), CNN ($\Delta = -1.86$), and FreeSurfer ($\Delta = -2.02$). The effect size obtained with MALF was significantly lower than the other methods. None of the other differences across methods were significant.
 
 ```{r}
 #| label: fig-similarity-hvr
-#| fig-cap: "**Similarity of values of HVR and their derived clinical effect sizes.** The lower triangle of the matrix plot shows scatter plots of the HVR values across the different automatic segmentation methods stratified by the clinical group (CH: Orange, MCI: Blue, and AD: Green). The upper triangle of the matrix plot lists the correlation coefficients between the automatic segmentation methods using Spearman's rank correlation. The diagonal of the matrix plot shows the density plots of the HVR by clinical group."
-#| fig-width: 7
-#| fig-height: 5
+#| fig-cap: "**Similarity of values of HVR and their derived clinical effect sizes.** The lower triangle of the matrix plot shows scatter plots of the HVR values across the different automatic segmentation methods stratified by the clinical group (CH: Orange, MCI: Blue, and AD: Green). The upper triangle of the matrix plot lists the correlation coefficients ($\\rho$) between the automatic segmentation methods using Spearman's rank correlation. The correlation coefficients include the values for the whole sample in gray and by clinical group. The diagonal of the matrix plot shows the density plots of the HVR by clinical group. Dashed lines represent the mean of each cohort. Inside each density plot, the inlaid box shows calculated effect sizes between the CH and AD groups using Glass' Delta and their robust 95% confidence intervals."
+#| fig-width: 6.5
+#| fig-height: 4.6
 
 # Load pre-computed effect sizes for HVR (Glass' delta with bootstrap CI)
 hvr_effect_file <- here("data/rds/adni-bl_effect-sizes_hvr_dx.rds")
@@ -981,16 +998,16 @@ hvr_wide <- vol_data[QC == "Pass" & METHOD != "FS_V4_V5", .(PTID, DX, METHOD, HV
 hvr_method_cols <- intersect(c("MALF", "NLPB", "CNN", "FS_V6"), names(hvr_wide))
 
 # Create ggpairs plot for HVR (reuses diag_fun defined in previous chunk)
-p_hvr <- ggpairs(
+p_hvr <- GGally::ggpairs(
   hvr_wide,
   columns = hvr_method_cols,
   mapping = aes(colour = DX, alpha = 0.7),
-  upper = list(continuous = wrap("cor", method = "spearman", stars = FALSE)),
-  diag = list(continuous = wrap(diag_fun, labels.dt = hvr_labels_dt)),
-  lower = list(continuous = wrap("points", size = 0.65, shape = 21))
+  upper = list(continuous = GGally::wrap("cor", method = "spearman", stars = FALSE)),
+  diag = list(continuous = GGally::wrap(diag_fun, labels.dt = hvr_labels_dt)),
+  lower = list(continuous = GGally::wrap("points", size = 0.65, shape = 21))
 ) +
-  theme_classic(base_size = 10) +
-  theme(text = element_text(size = 10)) +
+  theme_classic(base_size = 9) +
+  theme(text = element_text(size = 9)) +
   scale_fill_manual(values = cbPalette[c(2, 3, 8)]) +
   scale_colour_manual(values = cbPalette[c(2, 3, 8)])
 
@@ -1000,17 +1017,17 @@ print(p_hvr)
 
 ## Associations of Hippocampal Volumetrics With Age, Memory, and Global Cognition {#sec-results-associations}
 
-The correlation coefficients between HCvol with age, the subscores of learning from RAVLT and the scores of ADAS13 for all four segmentation methods are presented in @fig-associations. The correlation coefficients for HVR are presented as well. All correlations and comparisons were corrected for multiple comparisons. We found a significant positive association (p<0.001) between HCvol and Age across all clinical groups for FreeSurfer (N=1589), CNN (1612), and NLPB (N=1600); for MALF (1590), the correlation was significant only on the CH (p=0.002) and MCI groups (p<0.001). The association between HVR and age was significant for all groups and methods (p<0.001). The correlations of age with HVR were higher compared to correlations with HCvol. This difference was significant on the CH and MCI cohorts for the CNN (CH, ρ: −0.4 vs. −0.53, p=0.012; MCI, ρ: −0.46 vs. −0.57, p=0.01; @fig-associations and Figure S4) and NLPB (CH, ρ: −0.34 vs. −0.49, p=0.006; MCI, ρ: −0.39 vs. −0.54, p=0.001; @fig-associations and Figure S5), and all clinical groups of MALF (CH, ρ: −0.19 vs. −0.5; MCI, ρ: −0.2 vs. −0.52; AD, ρ: −0.03 vs. −0.38; all p<0.001; @fig-associations and Figure S6). The HCvol and HVR performance difference was not found on FreeSurfer (@fig-associations and Figure S7).
+The correlation coefficients between HCvol with age, the subscores of learning from RAVLT and the scores of ADAS13 for all four segmentation methods are presented in @fig-associations. The correlation coefficients for HVR are presented as well. All correlations and comparisons were corrected for multiple comparisons. We found a significant positive association (p<0.001) between HCvol and Age across all clinical groups for FreeSurfer (N=1589), CNN (1612), and NLPB (N=1600); for MALF (1590), the correlation was significant only on the CH (p=0.002) and MCI groups (p<0.001). The association between HVR and age was significant for all groups and methods (p<0.001). The correlations of age with HVR were higher compared to correlations with HCvol. This difference was significant on the CH and MCI cohorts for the CNN (CH, $\rho$: -0.4 vs. -0.53, p=0.012; MCI, $\rho$: -0.46 vs. -0.57, p=0.01; @fig-associations and Figure S4) and NLPB (CH, $\rho$: -0.34 vs. -0.49, p=0.006; MCI, $\rho$: -0.39 vs. -0.54, p=0.001; @fig-associations and Figure S5), and all clinical groups of MALF (CH, $\rho$: -0.19 vs. -0.5; MCI, $\rho$: -0.2 vs. -0.52; AD, $\rho$: -0.03 vs. -0.38; all p<0.001; @fig-associations and Figure S6). The HCvol and HVR performance difference was not found on FreeSurfer (@fig-associations and Figure S7).
 
 There was a positive association with the RAVLT learning subscore on both HCvol and HVR with all four methods, but this association was significant only for the MCI cohort (HCvol: 0.24–0.37; HVR: 0.25–0.31; p<0.001; @fig-associations). The association between HVR and memory was significantly stronger than the one with HCvol only for the MALF segmentation and the AD group (@fig-associations and Figure S4).
 
-We noted a negative association between both HCvol and HVR with the ADAS13 scores across groups (@fig-associations). The correlations of HCvol with cognitive decline were significant in the CH group segmented with FreeSurfer (ρ=−0.22, p<0.001), CNN (ρ=−0.22, p<0.001) and NLPB (ρ=−0.2, p<0.001), but not MALF (ρ=−0.1, p=1); and the MCI group on all four methods (FreeSurfer: ρ=−0.48; CNN: ρ=−0.46; NLPB: ρ=−0.43; and MALF: ρ=−0.25; p<0.001). For the AD group, the only significant correlations between HCvol and ADAS13 were found on the FreeSurfer (ρ=−0.22, p=0.01) and CNN methods (ρ=−0.22, p=0.01). The association between HVR and ADAS13 was significant in all three groups of the four segmentation methods (ρ=−0.21 – −0.44, p<0.001). The magnitude of these associations was comparable to those of HCvol on all segmentation methods except for MALF. The correlation between ADAS13 and the HVR obtained from the MALF was stronger on all groups (CH, ρ: −0.1 vs. −0.21, p=0.048; MCI, ρ: −0.25 vs. −0.37, p=0.009; AD, ρ: 0.04 vs. −0.3, p<0.001; Figure S4).
+We noted a negative association between both HCvol and HVR with the ADAS13 scores across groups (@fig-associations). The correlations of HCvol with cognitive decline were significant in the CH group segmented with FreeSurfer ($\rho = -0.22$, p<0.001), CNN ($\rho = -0.22$, p<0.001) and NLPB ($\rho = -0.2$, p<0.001), but not MALF ($\rho = -0.1$, p=1); and the MCI group on all four methods (FreeSurfer: $\rho = -0.48$; CNN: $\rho = -0.46$; NLPB: $\rho = -0.43$; and MALF: $\rho = -0.25$; p<0.001). For the AD group, the only significant correlations between HCvol and ADAS13 were found on the FreeSurfer ($\rho = -0.22$, p=0.01) and CNN methods ($\rho = -0.22$, p=0.01). The association between HVR and ADAS13 was significant in all three groups of the four segmentation methods ($\rho = -0.21$ – $-0.44$, p<0.001). The magnitude of these associations was comparable to those of HCvol on all segmentation methods except for MALF. The correlation between ADAS13 and the HVR obtained from the MALF was stronger on all groups (CH, $\rho$: -0.1 vs. -0.21, p=0.048; MCI, $\rho$: -0.25 vs. -0.37, p=0.009; AD, $\rho$: 0.04 vs. -0.3, p<0.001; Figure S4).
 
 ```{r}
 #| label: fig-associations
-#| fig-cap: "**Associations between hippocampal measures and age, memory, and global cognition.** Summary of the correlation coefficients measured by Spearman's rank correlation coefficients (ρ), between HCvol (HCv), HVR, and age, memory (measured by RAVLT learning subscore), and global cognition (measured by ADAS13). Colored asterisks mark the significance of the correlation (* = p < 0.05; ** = p < 0.01, *** = p < 0.001). All p-values are corrected for multiple comparisons."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Associations between hippocampal measures and age, memory, and global cognition.** Summary of the correlation coefficients measured by Spearman's rank correlation coefficients ($\\rho$), between HCvol (HCv in the legend), HVR, and age, memory (measured by RAVLT learning subscore), and global cognition (measured by ADAS13). Colored asterisks mark the significance of the correlation (* = p < 0.05; ** = p < 0.01, *** = p < 0.001). Gray asterisks mark the significance comparing HCvol and HVR. All p-values are corrected for multiple comparisons."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 # Use pre-computed correlation data if available
 if (!is.null(corr_data)) {
@@ -1050,9 +1067,9 @@ if (!is.null(corr_data)) {
     mtd_labels <- c(cnn = "CNN", fs6 = "FS v6.0", malf = "MALF", nlpb = "NLPB")
 
     p <- ggplot(sub_dt, aes(x = HC, y = Rval)) +
-      theme_classic(base_size = 11) +
+      theme_classic(base_size = 9) +
       theme(
-        text = element_text(size = 11),
+        text = element_text(size = 9),
         axis.text.x = element_markdown(),
         axis.title.x = element_blank(),
         legend.position = "none"
@@ -1161,7 +1178,7 @@ To fulfill our goal, we evaluated the viability of various automatic segmentatio
 
 Despite this inherent drawback, all three of the evaluated locally developed methods could successfully segment the HC with high accuracy, with the CNN (U-Net based) method showing a clear advantage over the other two. Still, the MALF and NLPB segmentations results were comparable to the accuracy reported in their original papers [@coupe2011; @collins2010; @fonov2012], and even similar to some U-net based methods [@brusini2020; @cao2018; @goubran2020; @liu2020; @yao2019]. We did not estimate segmentation performance with FreeSurfer, as it uses a different anatomical definition for the HC and CSF spaces, or other deep learning-based segmentation techniques in our analysis due to the lack of publicly available pretrained models or reproducible pipelines, particularly those capable of reliably segmenting the ventricles in addition to the HC. Nonetheless, our CNN segmentation results are comparable to state-of-the-art methods reported in the literature and generalize well even when applied to an out-of-sample validation dataset including participants with varying degree of neurodegeneration. For instance, U-Net-based approaches, as reviewed by Yi et al. [@yi2021] achieved Dice coefficients of 0.89–0.91 for hippocampal segmentation in the ADNI dataset [@cao2018; @chen2019]. Similarly, 3D CNN methods like those by Xie and Gillies [@xie2018] and Amoroso et al. [@amoroso2015] reported Dice scores of 0.90–0.93. Our CNN achieves a Dice coefficient of 0.96 for both left and right HC, with equally strong performance across additional segmentation metrics, including Cohen's Kappa, sensitivity and specificity. This high performance was replicated in an out-of-sample validation set spanning cognitively unimpaired, MCI and AD participants, where the CNN maintained high Dice and Kappa values across all groups, with no significant group differences and only minor laterality effects.
 
-Ventricular segmentation is crucial for calculating the Hippocampal-to-Ventricle Ratio (HVR), a core focus of our work. The segmentation of the temporal horn of the lateral ventricle, being a much smaller region with somewhat arbitrary limits in its anterior and posterior borders, was a significantly harder task compared to the extraction of the HC. This difficulty was reflected in the markedly lower Dice coefficients, Kappa and sensitivity scores across all methods, with particularly sharp decline in performance observed for MALF and NLPB segmentations. In contrast, the CNN maintained high segmentation quality with values ranging between 0.87–0.91, and volumetric correlations reaching approximately ρ≈0.98 for HCvol, as well as CSFvol (@fig-correlation). In practical terms, CNN also had the lowest failure rate across all methods, with only two segmentations excluded due to quality control. These results highlight the reliability of our CNN approach and its capacity for jointly segment both the HC and the ventricular space, a unique advantage that aligns with our study's emphasis on HVR calculation.
+Ventricular segmentation is crucial for calculating the Hippocampal-to-Ventricle Ratio (HVR), a core focus of our work. The segmentation of the temporal horn of the lateral ventricle, being a much smaller region with somewhat arbitrary limits in its anterior and posterior borders, was a significantly harder task compared to the extraction of the HC. This difficulty was reflected in the markedly lower Dice coefficients, Kappa and sensitivity scores across all methods, with particularly sharp decline in performance observed for MALF and NLPB segmentations. In contrast, the CNN maintained high segmentation quality with values ranging between 0.87–0.91, and volumetric correlations reaching approximately $\rho \approx 0.98$ for HCvol, as well as CSFvol (@fig-correlation). In practical terms, CNN also had the lowest failure rate across all methods, with only two segmentations excluded due to quality control. These results highlight the reliability of our CNN approach and its capacity for jointly segment both the HC and the ventricular space, a unique advantage that aligns with our study's emphasis on HVR calculation.
 
 The Bland–Altman plots in @fig-blandaltman confirmed the superior performance of the CNN technique, highlighting minimal errors and no systematic bias. In contrast, both NLPB and MALF exhibited wider limits of error, with MALF displaying a notable regression to the mean pattern—overestimating smaller regions and underestimating larger ones. This systematic bias, previously noted in the literature [@zandifar2017], was more pronounced in our pathological sample, likely due to the greater variability introduced by both age-related and AD-related atrophy. While all methods tended to underestimate CSFvol on average, the extent of this bias was particularly marked in MALF, especially for larger ventricular volumes. These findings were consistent with the out-of-sample validation, where CNN showed tight limits of agreement and minimal bias across all groups (Figure S3). Importantly, we found no significant differences in error magnitude.
 
@@ -1233,6 +1250,13 @@ SUPPLEMENTARY MATERIALS
 
 # Supplementary Materials {.unnumbered .appendix}
 
+```{=latex}
+\setcounter{table}{0}
+\renewcommand{\thetable}{S\arabic{table}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{S\arabic{figure}}
+```
+
 ```{r}
 #| label: supp-setup
 #| include: false
@@ -1277,6 +1301,191 @@ if (file.exists(fpath)) {
     (\(DT) DT[, GROUP := factor(GROUP, levels = c("NC", "MCI", "AD"),
                                  labels = c("CH", "MCI", "AD"))])()
 }
+
+# Prepare training data (from cross-validation segmentations)
+Map(
+  \(Name, DT) {
+    DT[, let(
+      segm = factor(Name),
+      id = factor(id),
+      roi = roi |> toupper() |> factor(),
+      side = side |> substr(1, 1) |> toupper() |> factor()
+    )]
+    DT |> setcolorder("segm") |> setnames(toupper)
+  },
+  names(supp_segm_kappa),
+  supp_segm_kappa
+) |> invisible()
+
+supp_training_data <- supp_segm_kappa |>
+  rbindlist() |>
+  melt(id = 1:4, variable = "MSR", value = "VAL")
+
+# Prepare validation data
+supp_validation_data <- NULL
+if (!is.null(supp_valid_kappa) && !is.null(supp_valid_groups)) {
+  supp_valid_kappa[, let(
+    dataset = "ADNI",
+    id = factor(id),
+    side = hc |> substr(4, 4) |> toupper() |> factor()
+  )][, hc := NULL]
+  supp_valid_kappa |>
+    setcolorder(c("dataset", "id", "side")) |>
+    setnames(toupper)
+  supp_validation_data <- supp_valid_groups[supp_valid_kappa, on = "ID"] |>
+    melt(id = 1:4, variable = "MSR", value = "VAL")
+}
+
+# Run statistical analyses
+supp_comparisons <- list()
+
+## Cross-validation: Repeated measures robust ANOVA
+supp_comparisons$Training <- list(ANOVA = list(), PostHoc = list())
+
+for (roi in levels(supp_training_data$ROI)) {
+  for (msr in levels(supp_training_data$MSR)) {
+    aov_res <- tryCatch({
+      supp_training_data[
+        roi, on = "ROI"
+      ][
+        msr, on = "MSR"
+      ][
+        order(SEGM, SIDE),
+        rmanova(VAL, interaction(SEGM, SIDE), ID)
+      ] |> suppressWarnings()
+    }, error = \(e) NULL)
+
+    if (!is.null(aov_res)) {
+      identifier <- paste(roi, msr, sep = "_")
+      supp_comparisons$Training$ANOVA[[identifier]] <- data.table(
+        ROI = roi,
+        MSR = msr,
+        Fstat = aov_res$test,
+        DF = sprintf("(%.2f, %.2f)", aov_res$df1, aov_res$df2),
+        Pval = aov_res$p.value,
+        Padj = p.adjust(aov_res$p.value, method = "fdr", n = 10)
+      )
+
+      posthoc <- supp_training_data[
+        roi, on = "ROI"
+      ][
+        msr, on = "MSR"
+      ][
+        order(SEGM, SIDE),
+        rmmcp(VAL, interaction(SEGM, SIDE), ID)
+      ] |> suppressWarnings()
+
+      supp_comparisons$Training$PostHoc[[identifier]] <- posthoc$comp |>
+        data.table() |>
+        setnames(1:2, paste0("G", 1:2)) |>
+        (\(DT) DT[, let(
+          G1 = factor(G1, labels = posthoc$fnames[-6]),
+          G2 = factor(G2, labels = posthoc$fnames[-1]),
+          ROI = roi,
+          MSR = msr
+        )])()
+    }
+  }
+}
+
+## Out-of-sample validation: Robust mixed ANOVA
+supp_comparisons$Validation <- list(ANOVA = list(), PostHoc = list())
+
+if (!is.null(supp_validation_data)) {
+  for (msr in levels(supp_validation_data$MSR)) {
+    aov_res <- tryCatch({
+      bwtrim(VAL ~ GROUP * SIDE, ID, supp_validation_data[msr[1], on = "MSR"])
+    }, error = \(e) NULL)
+
+    if (!is.null(aov_res)) {
+      aov.dt <- data.table(
+        ROI = "HC",
+        MSR = msr,
+        COMP = c("GROUP", "SIDE", "GROUP:SIDE"),
+        Fstat = sprintf(
+          "%.2f", as.numeric(aov_res[c("Qa", "Qb", "Qab")])
+        ),
+        DF = sprintf(
+          "(%i, %.2f)",
+          aov_res[c("A.df", "B.df", "AB.df")] |>
+            lapply(\(x) x[[1]]) |> unlist(),
+          aov_res[c("A.df", "B.df", "AB.df")] |>
+            lapply(\(x) x[[2]]) |> unlist()
+        ),
+        Pval = as.numeric(aov_res[c("A.p.value", "B.p.value", "AB.p.value")])
+      )
+      aov.dt[, Padj := p.adjust(Pval, method = "fdr", n = 5)]
+      supp_comparisons$Validation$ANOVA[[msr]] <- aov.dt
+
+      if (aov.dt["GROUP", on = "COMP", Pval <= 0.05]) {
+        posthoc <- lincon(
+          VAL ~ GROUP, supp_validation_data[msr, on = "MSR"]
+        )
+        supp_comparisons$Validation$PostHoc[[msr]] <- posthoc$comp |>
+          data.table() |>
+          setnames(1:2, paste0("G", 1:2)) |>
+          (\(DT) DT[, let(
+            G1 = factor(G1, labels = posthoc$fnames[-3]),
+            G2 = factor(G2, labels = posthoc$fnames[-1]),
+            MSR = msr
+          )])()
+      }
+    }
+  }
+}
+
+# Unlist comparison results
+supp_comparisons <- lapply(
+  supp_comparisons,
+  \(level1) lapply(level1, rbindlist)
+)
+
+# Compute post-hoc segmentation comparison data for tables S4 & S5
+supp_posthoc_segm <- copy(
+  supp_comparisons$Training$PostHoc[
+    substr(G1, 1, 1) != substr(G2, 1, 1)
+  ]
+) |>
+  (\(DT) {
+    DT[, c("G1", "G1s") := DT[, tstrsplit(G1, "\\.")]]
+    DT[, c("G2", "G2s") := DT[, tstrsplit(G2, "\\.")]]
+    DT[, COMP := sprintf("%s-%s \u2014 %s-%s", G1, G1s, G2, G2s)]
+    DT[MSR %like% "ACC" & psihat == 0, COMP := "MALF \u2014 NLPB"]
+    DT[, COMP := factor(COMP, levels = DT[order(G2), unique(COMP)])]
+    DT[
+      ,
+      .(
+        CONTRAST = COMP,
+        PSI = fcase(
+          psihat == 0, "0",
+          abs(psihat) < 0.01, sprintf("%.1e", psihat),
+          abs(psihat) >= 0.01, sprintf("%.2f", psihat)
+        ),
+        CI = sprintf(
+          "(%s, %s)",
+          fcase(
+            ci.lower == 0, "0",
+            abs(ci.lower) < 0.01, sprintf("%.1e", ci.lower),
+            abs(ci.lower) >= 0.01, sprintf("%.2f", ci.lower)
+          ),
+          fcase(
+            ci.upper == 0, "0",
+            abs(ci.upper) < 0.01, sprintf("%.1e", ci.upper),
+            abs(ci.upper) >= 0.01, sprintf("%.2f", ci.upper)
+          )
+        ),
+        Pval = fifelse(is.na(p.value), NA, sprintf("%.3f", p.value)),
+        SIGN = p.value < p.crit
+      ),
+      .(
+        ROI,
+        MSR = MSR |> str_to_title() |> sprintf(fmt = "**%s**")
+      )
+    ]
+  })() |>
+  unique() |>
+  dcast(... ~ ROI, value.var = c("PSI", "CI", "Pval", "SIGN")) |>
+  setcolorder(c(1:3, 5, 7, 9))
 ```
 
 ## Supplementary Tables {.unnumbered}
@@ -1285,27 +1494,12 @@ if (file.exists(fpath)) {
 
 ```{r}
 #| label: tbl-s1
-#| tbl-cap: "Cross-validation segmentation performance. Median and standard deviation of the overlap and accuracy metrics (Dice, Kappa, and Sensitivity) for MALF, NLPB, and CNN segmentations of the hippocampus and lateral ventricles."
+#| tbl-cap: "**Automatic segmentation performance metrics.** Performance metrics of the three cross-validation trained automated segmentation methods (MALF, NLPB, and CNN) for both the hippocampus (HCvol) and the surrounding ventricular regions (CSFvol). Overall-agreement and class-wise performance metrics include accuracy, Dice coefficient, Cohen's Kappa, sensitivity and specificity, with separate values reported for the left and right hemispheres. All values are reported as medians with standard deviations."
 
 rds_path <- here("tables/table-s1_man-seg_hcv-hvr_cv.rds")
 
 tbl_s1 <- load_or_generate(rds_path, function() {
-  # Process training data
-  training_data <- supp_segm_kappa |>
-    Map(f = \(Name, DT) {
-      DT[, let(
-        segm = factor(Name),
-        id = factor(id),
-        roi = roi |> toupper() |> factor(),
-        side = side |> substr(1, 1) |> toupper() |> factor()
-      )]
-      DT |> setcolorder("segm") |> setnames(toupper)
-    }, names(supp_segm_kappa), DT = _) |>
-    rbindlist() |>
-    melt(id = 1:4, variable = "MSR", value = "VAL")
-
-  # Generate table
-  training_data[
+  supp_training_data[
     ,
     .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
     .(
@@ -1321,100 +1515,242 @@ tbl_s1 <- load_or_generate(rds_path, function() {
     tab_spanner(label = "Hippocampus", columns = starts_with("H"), level = 2) |>
     tab_spanner(label = "Ventricles", columns = starts_with("V"), level = 2) |>
     cols_label(ends_with("L") ~ "Left", ends_with("R") ~ "Right") |>
-    tab_footnote(footnote = "Median (SD).")
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s1
 ```
 
+\newpage
+
 ### Table S2: Cross-validation ANOVA results {.unnumbered}
 
 ```{r}
 #| label: tbl-s2
-#| tbl-cap: "Repeated-measures robust two-way ANOVA for cross-validation segmentation performance comparing MALF, NLPB, and CNN methods."
+#| tbl-cap: "**Two-way ANOVA results for segmentation metrics.** Results of the robust repeated-measures two-way ANOVA with trimmed means applied to the hippocampal and ventricular segmentation performance measures comparing the automated segmentation methods and hemispheres. Reported are the F-statistics, degrees of freedom, and *p*-values. *P*-values have been adjusted for FDR using the Benjamini and Hochberg procedure."
 
 rds_path <- here("tables/table-s2_man-seg_anova_cv.rds")
 
 tbl_s2 <- load_or_generate(rds_path, function() {
-  # This requires running the full ANOVA analysis
-  # For now, return a placeholder message if RDS doesn't exist
-  gt(data.frame(Note = "Run compare_man-seg.R to generate this table"))
+  supp_comparisons$Training$ANOVA[
+    order(MSR),
+    .(Fstat, DF, Pval = sprintf("%.3f", Padj)),
+    .(
+      ROI = fifelse(ROI == "HC", "**Hippocampus**", "**Ventricles**"),
+      MSR = str_to_title(MSR)
+    )
+  ] |>
+    gt(rowname_col = "MSR", groupname_col = "ROI", process_md = TRUE) |>
+    tab_stub_indent(rows = everything(), indent = 1) |>
+    cols_align("center", columns = c("Fstat", "DF", "Pval")) |>
+    cols_label(
+      "Fstat" ~ md("*F*"), "DF" ~ "df", "Pval" ~ md("*p*")
+    ) |>
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s2
 ```
 
+\newpage
+
 ### Table S3: Post-hoc comparisons (Side differences) {.unnumbered}
 
 ```{r}
 #| label: tbl-s3
-#| tbl-cap: "Robust pair-wise post-hoc comparisons for laterality effects in segmentation performance."
+#| tbl-cap: "**Pair-wise comparisons for segmentation metrics by side.** Robust pair-wise post hoc comparisons of side differences in performance measures within the automated method for hippocampal and ventricular segmentations. The comparisons include robust effect sizes ($\\psi$) with their 95% confidence intervals and corresponding *p*-values. Bold entries indicate statistical significance after correction for multiple comparisons."
 
 rds_path <- here("tables/table-s3_man-seg_posthoc_cv_side.rds")
 
 tbl_s3 <- load_or_generate(rds_path, function() {
-  gt(data.frame(Note = "Run compare_man-seg.R to generate this table"))
+  supp_comparisons$Training$PostHoc[
+    substr(G1, 1, 1) == substr(G2, 1, 1),
+    .(
+      PSI = fcase(
+        psihat == 0, "0",
+        abs(psihat) < 0.01, sprintf("%.1e", psihat),
+        abs(psihat) >= 0.01, sprintf("%.2f", psihat)
+      ),
+      CI = sprintf(
+        "(%s, %s)",
+        fcase(
+          ci.lower == 0, "0",
+          abs(ci.lower) < 0.01, sprintf("%.1e", ci.lower),
+          abs(ci.lower) >= 0.01, sprintf("%.2f", ci.lower)
+        ),
+        fcase(
+          ci.upper == 0, "0",
+          abs(ci.upper) < 0.01, sprintf("%.1e", ci.upper),
+          abs(ci.upper) >= 0.01, sprintf("%.2f", ci.upper)
+        )
+      ),
+      Pval = fifelse(is.na(p.value), NA, sprintf("%.3f", p.value)),
+      SIGN = p.value < p.crit
+    ),
+    .(
+      ROI,
+      SEGM = G1 |>
+        gsub(pattern = "\\.(L|R)", replacement = "") |>
+        factor(
+          levels = c("MALF", "NLPB", "CNN"),
+          labels = sprintf("**%s**", c("MALF", "NLPB", "CNN"))
+        ),
+      MSR = str_to_title(MSR)
+    )
+  ] |>
+    dcast(... ~ ROI, value.var = c("PSI", "CI", "Pval", "SIGN")) |>
+    setorder(MSR) |>
+    setcolorder(c(1:3, 5, 7, 9)) |>
+    gt(
+      rowname_col = "MSR",
+      groupname_col = "SEGM",
+      process_md = TRUE
+    ) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_HC", "CI_HC", "Pval_HC"),
+        rows = SIGN_HC == TRUE
+      )
+    ) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_VC", "CI_VC", "Pval_VC"),
+        rows = SIGN_VC == TRUE
+      )
+    ) |>
+    cols_hide(columns = contains("SIGN")) |>
+    tab_stub_indent(rows = everything(), indent = 1) |>
+    cols_align("center", columns = everything()) |>
+    opt_horizontal_padding(scale = .5) |>
+    tab_spanner(label = "Hippocampus", columns = ends_with("HC")) |>
+    tab_spanner(label = "Ventricles", columns = ends_with("VC")) |>
+    cols_label(
+      starts_with("PSI") ~ md("$\\psi$"),
+      starts_with("CI") ~ md("$95\\%~\\text{CI}$"),
+      starts_with("Pval") ~ md("$p$")
+    ) |>
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s3
 ```
 
+\newpage
+
 ### Table S4: Post-hoc comparisons (Accuracy, Dice, Kappa) {.unnumbered}
 
 ```{r}
 #| label: tbl-s4
-#| tbl-cap: "Robust pair-wise post-hoc comparisons between segmentation methods for overall agreement metrics."
+#| tbl-cap: "**Pair-wise comparisons for segmentation metrics by overall-agreement performance.** Robust pair-wise post hoc comparisons of overall-agreement performance (accuracy, Dice coefficient and Cohen's kappa) between the different automated methods for hippocampal and ventricular segmentations. The comparisons include robust effect sizes ($\\psi$) with their 95% confidence intervals and corresponding *p*-values. Bold entries indicate statistical significance after correction for multiple comparisons."
 
 rds_path <- here("tables/table-s4_man-seg_posthoc_cv_segm1.rds")
 
 tbl_s4 <- load_or_generate(rds_path, function() {
-  gt(data.frame(Note = "Run compare_man-seg.R to generate this table"))
+  supp_posthoc_segm[!MSR %like% "S"] |>
+    gt(
+      rowname_col = "CONTRAST",
+      groupname_col = "MSR",
+      process_md = TRUE
+    ) |>
+    tab_style(style = cell_text(size = "x-small"), locations = cells_body()) |>
+    tab_style(style = cell_text(size = "x-small"), locations = cells_stub()) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_HC", "CI_HC", "Pval_HC"),
+        rows = SIGN_HC == TRUE
+      )
+    ) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_VC", "CI_VC", "Pval_VC"),
+        rows = SIGN_VC == TRUE
+      )
+    ) |>
+    cols_hide(columns = contains("SIGN")) |>
+    tab_stub_indent(rows = everything(), indent = 1) |>
+    cols_align("center", columns = everything()) |>
+    opt_horizontal_padding(scale = .3) |>
+    tab_spanner(label = "Hippocampus", columns = ends_with("HC")) |>
+    tab_spanner(label = "Ventricles", columns = ends_with("VC")) |>
+    cols_label(
+      starts_with("PSI") ~ md("$\\psi$"),
+      starts_with("CI") ~ md("$95\\%~\\text{CI}$"),
+      starts_with("Pval") ~ md("$p$")
+    ) |>
+    tab_options(table.font.size = "8pt", column_labels.font.size = "8pt") |>
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s4
 ```
 
+\newpage
+
 ### Table S5: Post-hoc comparisons (Sensitivity, Specificity) {.unnumbered}
 
 ```{r}
 #| label: tbl-s5
-#| tbl-cap: "Robust pair-wise post-hoc comparisons between segmentation methods for class-wise performance metrics."
+#| tbl-cap: "**Pair-wise comparisons for segmentation metrics by class-wise performance.** Robust pair-wise post hoc comparisons of class-wise performance (sensitivity and specificity) between the different automated methods for hippocampal and ventricular segmentations. The comparisons include robust effect sizes ($\\psi$) with their 95% confidence intervals and corresponding *p*-values. Bold entries indicate statistical significance after correction for multiple comparisons."
 
 rds_path <- here("tables/table-s5_man-seg_posthoc_cv_segm2.rds")
 
 tbl_s5 <- load_or_generate(rds_path, function() {
-  gt(data.frame(Note = "Run compare_man-seg.R to generate this table"))
+  supp_posthoc_segm[MSR %like% "S"] |>
+    gt(
+      rowname_col = "CONTRAST",
+      groupname_col = "MSR",
+      process_md = TRUE
+    ) |>
+    tab_style(style = cell_text(size = "x-small"), locations = cells_body()) |>
+    tab_style(style = cell_text(size = "x-small"), locations = cells_stub()) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_HC", "CI_HC", "Pval_HC"),
+        rows = SIGN_HC == TRUE
+      )
+    ) |>
+    tab_style(
+      style = cell_text(weight = "bold"),
+      locations = cells_body(
+        columns = c("PSI_VC", "CI_VC", "Pval_VC"),
+        rows = SIGN_VC == TRUE
+      )
+    ) |>
+    cols_hide(columns = contains("SIGN")) |>
+    tab_stub_indent(rows = everything(), indent = 1) |>
+    cols_align("center", columns = everything()) |>
+    opt_horizontal_padding(scale = .3) |>
+    tab_spanner(label = "Hippocampus", columns = ends_with("HC")) |>
+    tab_spanner(label = "Ventricles", columns = ends_with("VC")) |>
+    cols_label(
+      starts_with("PSI") ~ md("$\\psi$"),
+      starts_with("CI") ~ md("$95\\%~\\text{CI}$"),
+      starts_with("Pval") ~ md("$p$")
+    ) |>
+    tab_options(table.font.size = "8pt", column_labels.font.size = "8pt") |>
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s5
 ```
 
+\newpage
+
 ### Table S6: Out-of-sample validation performance {.unnumbered}
 
 ```{r}
 #| label: tbl-s6
-#| tbl-cap: "Out-of-sample validation segmentation performance. Median and standard deviation of the overlap metrics for CNN segmentations across clinical groups."
+#| tbl-cap: "**Out-of-sample validation segmentation performance metrics.** Performance metrics of the segmentation of the hippocampus on the out-of-sample validation ADNI subset of data using our trained CNN. Overall-agreement and class-wise performance metrics include accuracy, Dice coefficient, Cohen's Kappa, sensitivity and specificity, with separate values reported for the left and right hemispheres and stratified by clinical group (CH, MCI, and AD). All values are reported as medians with standard deviations."
 
 rds_path <- here("tables/table-s6_man-seg_hcv-hvr_val.rds")
 
 tbl_s6 <- load_or_generate(rds_path, function() {
-  if (is.null(supp_valid_kappa) || is.null(supp_valid_groups)) {
-    return(gt(data.frame(Note = "Validation data not available")))
-  }
-
-  # Process validation data
-  valid_data <- supp_valid_kappa[, let(
-    dataset = "ADNI",
-    id = factor(id),
-    side = hc |> substr(4, 4) |> toupper() |> factor()
-  )][, hc := NULL] |>
-    setcolorder(c("dataset", "id", "side")) |>
-    setnames(toupper)
-
-  valid_data <- supp_valid_groups[valid_data, on = "ID"] |>
-    melt(id = 1:4, variable = "MSR", value = "VAL")
-
-  valid_data[
+  supp_validation_data[
     order(MSR),
     .(VAL = sprintf("%.2f (%.2f)", median(VAL), sd(VAL))),
     .(
@@ -1428,26 +1764,48 @@ tbl_s6 <- load_or_generate(rds_path, function() {
     cols_align("center", columns = c("L", "R")) |>
     tab_spanner(label = "Hippocampus", columns = c("L", "R")) |>
     cols_label(ends_with("L") ~ "Left", ends_with("R") ~ "Right") |>
-    tab_footnote(footnote = "Median (SD).")
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s6
 ```
 
+\newpage
+
 ### Table S7: Out-of-sample validation ANOVA {.unnumbered}
 
 ```{r}
 #| label: tbl-s7
-#| tbl-cap: "Robust two-way mixed ANOVA for out-of-sample validation comparing clinical groups and hemispheres."
+#| tbl-cap: "**Out-of-sample validation two-way mixed ANOVA results.** Results of the robust mixed two-way ANOVA with trimmed means applied to the hippocampal segmentation performance measures on the out-of-sample validation ADNI subset of data using the trained CNN, comparing clinical groups and hemispheres. Reported are the F-statistics, degrees of freedom, and *p*-values. *P*-values have been adjusted for FDR using the Benjamini and Hochberg procedure."
 
 rds_path <- here("tables/table-s7_man-seg_anova_val.rds")
 
 tbl_s7 <- load_or_generate(rds_path, function() {
-  gt(data.frame(Note = "Run compare_man-seg.R to generate this table"))
+  supp_comparisons$Validation$ANOVA[
+    order(MSR),
+    .(Fstat, DF, Pval = sprintf("%.3f", Padj)),
+    .(
+      MSR = str_to_title(MSR),
+      COMP = factor(
+        COMP,
+        levels = c("GROUP", "SIDE", "GROUP:SIDE"),
+        labels = c("**Group**", "**Side**", "**Group:Side**")
+      )
+    )
+  ] |>
+    gt(rowname_col = "MSR", groupname_col = "COMP", process_md = TRUE) |>
+    tab_stub_indent(rows = everything(), indent = 1) |>
+    cols_align("center", columns = c("Fstat", "DF", "Pval")) |>
+    cols_label(
+      "Fstat" ~ md("*F*"), "DF" ~ "df", "Pval" ~ md("*p*")
+    ) |>
+    style_manuscript_table(table_type = "supplementary")
 })
 
 tbl_s7
 ```
+
+\newpage
 
 ## Supplementary Figures {.unnumbered}
 
@@ -1456,27 +1814,11 @@ tbl_s7
 ```{r}
 #| label: fig-s1
 #| fig-cap: "**Out-of-sample validation segmentation performance.** Violin plots of the distributions of the overlap and accuracy metrics (Dice, Kappa, and Sensitivity) between manual and computed segmentations of the hippocampus from the left (red) and right (blue) hemispheres on an out-of-sample subset of ADNI data using CNN for each of the clinical groups (CH, MCI, and AD). The median and standard deviation are represented inside the violin plots."
-#| fig-width: 6
-#| fig-height: 3
+#| fig-width: 5
+#| fig-height: 2.5
 
-# Check for pre-generated figure or generate from data
-fig_path <- here("quarto/figures/fig-s1.png")
-
-if (file.exists(fig_path) && is.null(supp_valid_kappa)) {
-  knitr::include_graphics(fig_path)
-} else if (!is.null(supp_valid_kappa) && !is.null(supp_valid_groups)) {
-  # Process validation data
-  valid_data <- supp_valid_kappa[, let(
-    id = factor(id),
-    side = hc |> substr(4, 4) |> toupper() |> factor()
-  )][, hc := NULL] |>
-    setcolorder(c("id", "side")) |>
-    setnames(toupper)
-
-  valid_data <- supp_valid_groups[valid_data, on = "ID"] |>
-    melt(id = 1:3, variable = "MSR", value = "VAL")
-
-  valid_data[
+if (!is.null(supp_validation_data)) {
+  supp_validation_data[
     !MSR %like% "ACC|SPEC",
     .(
       SIDE = SIDE |> factor(labels = c("Left", "Right")),
@@ -1487,10 +1829,10 @@ if (file.exists(fig_path) && is.null(supp_valid_kappa)) {
     )
   ] |>
     ggplot(mapping = aes(x = GROUP, y = VAL)) +
-    theme_classic(base_size = 12) +
+    theme_classic(base_size = 9) +
     theme(
-      text = element_text(size = 12),
-      axis.text = element_text(size = 10),
+      text = element_text(size = 9),
+      axis.text = element_text(size = 7),
       axis.title.x = element_markdown(),
       legend.position = "none"
     ) +
@@ -1504,10 +1846,10 @@ if (file.exists(fig_path) && is.null(supp_valid_kappa)) {
     stat_summary(
       mapping = aes(colour = SIDE),
       position = position_dodge(width = 0.95),
-      fun.data = "median_hilow",
+      fun.data = median_hilow,
       geom = "pointrange",
-      size = 0.01,
-      linewidth = 0.2
+      size = 0.15,
+      linewidth = 0.3
     ) +
     scale_colour_manual(values = c("darkred", "midnightblue")) +
     scale_fill_manual(values = c("darkred", "midnightblue")) +
@@ -1520,43 +1862,142 @@ if (file.exists(fig_path) && is.null(supp_valid_kappa)) {
       )
     )
 } else {
+  fig_path <- here("quarto/figures/fig-s1.png")
   knitr::include_graphics(fig_path)
 }
 ```
+
+\newpage
 
 ### Figure S2: Out-of-sample validation volume correlations {.unnumbered}
 
 ```{r}
 #| label: fig-s2
-#| fig-cap: "**Out-of-sample validation: Relationship between manual and computed hippocampal volumes.** Scatter plots of the volumes (measured in cc) of the left and right hippocampus from the manual segmentations against those obtained from CNN on the out-of-sample subset of ADNI data for each of the clinical groups (CH, MCI, AD). The Spearman's rank correlation coefficients (ρ) and their significance are added for each hemisphere."
-#| fig-width: 5
-#| fig-height: 3
+#| fig-cap: "**Out-of-sample validation: Relationship between manual and computed hippocampal volumes.** Scatter plots of the volumes (measured in cc) of the left and right hippocampus from the manual segmentations against those obtained from CNN on the out-of-sample subset of ADNI data for each of the clinical groups (CH, MCI, AD). The Spearman's rank correlation coefficients ($\\rho$) and their significance are added for each hemisphere."
+#| fig-width: 4
+#| fig-height: 4
 
-# Use static figure - volume data for validation requires additional processing
-fig_path <- here("quarto/figures/fig-s2.png")
-knitr::include_graphics(fig_path)
+if (!is.null(val_vols)) {
+  val_vols |>
+    ggplot(aes(x = CNN, y = MAN, colour = GROUP)) +
+    theme_classic(base_size = 10) +
+    theme(
+      text = element_text(size = 10),
+      axis.text = element_text(size = 8),
+      axis.title.x = element_markdown(),
+      legend.position = "none"
+    ) +
+    geom_abline(
+      intercept = 0, slope = 1,
+      colour = cbPalette[1], linetype = "dashed"
+    ) +
+    geom_smooth(method = "lm", alpha = .2, linewidth = .5) +
+    geom_point(size = 2, shape = 21) +
+    ggpubr::stat_cor(
+      aes(label = after_stat(r.label)),
+      r.accuracy = 0.001, size = 2.7,
+      cor.coef.name = "rho",
+      label.x.npc = "right", label.y.npc = "bottom",
+      hjust = "inward", method = "spearman"
+    ) +
+    facet_grid(rows = vars(ROI), cols = vars(SIDE), scales = "free") +
+    scale_colour_manual(values = cbPalette[c(2, 3, 8)]) +
+    labs(
+      y = "Manually segmented volumes",
+      x = paste(
+        "Volumes segmented by CNN for:",
+        sprintf("<span style='color:%s;'>CH</span>,", cbPalette[2]),
+        sprintf("<span style='color:%s;'>MCI</span>, and", cbPalette[3]),
+        sprintf("<span style='color:%s;'>AD</span>", cbPalette[8])
+      )
+    )
+}
 ```
+
+\newpage
 
 ### Figure S3: Out-of-sample validation Bland-Altman plots {.unnumbered}
 
 ```{r}
 #| label: fig-s3
 #| fig-cap: "**Out-of-sample validation Bland-Altman plots.** Bland-Altman plots for the volumetric comparison between mean HCvol (in cc) resulting from the automatic segmentation of the out-of-sample subset of ADNI data for each of the clinical groups (CH, MCI, AD). The dashed lines represent the mean difference (orange) and the upper and lower limits of agreement (blue)."
-#| fig-width: 6
-#| fig-height: 3
+#| fig-width: 5
+#| fig-height: 2.5
 
-# Use static figure - requires validation volume data
-fig_path <- here("quarto/figures/fig-s3.png")
-knitr::include_graphics(fig_path)
+if (!is.null(val_vols)) {
+  ba_dt <- val_vols[
+    , .(
+      AVG = (CNN + MAN) / 2,
+      DIFF = CNN - MAN
+    ),
+    .(SIDE, ROI, GROUP)
+  ][
+    , .(
+      AVG, DIFF,
+      MEAN_DIFF = mean(DIFF),
+      CI_low = mean(DIFF) - 1.96 * sd(DIFF),
+      CI_high = mean(DIFF) + 1.96 * sd(DIFF)
+    ),
+    .(ROI, GROUP)
+  ]
+
+  ggplot(ba_dt, aes(x = AVG, y = DIFF)) +
+    theme_classic(base_size = 10) +
+    theme(
+      text = element_text(size = 10),
+      axis.text = element_text(size = 8),
+      axis.title.x = element_markdown(),
+      legend.position = "none"
+    ) +
+    geom_point(shape = 21, colour = cbPalette[1]) +
+    geom_hline(
+      data = ba_dt[, .SD[1], .(ROI, GROUP)],
+      aes(yintercept = MEAN_DIFF),
+      colour = cbPalette[2], linetype = "dashed", alpha = .7
+    ) +
+    geom_text(
+      data = ba_dt[, .SD[1], GROUP],
+      aes(x = 1.2, y = MEAN_DIFF, label = round(MEAN_DIFF, 2)),
+      size = 2.5
+    ) +
+    geom_hline(
+      data = ba_dt[, .SD[1], .(ROI, GROUP)],
+      aes(yintercept = CI_low),
+      colour = cbPalette[3], linetype = "dashed", alpha = .7
+    ) +
+    geom_text(
+      data = ba_dt[, .SD[1], GROUP],
+      aes(x = 1.2, y = CI_low, label = round(CI_low, 2)),
+      nudge_y = -.100, size = 2.5
+    ) +
+    geom_hline(
+      data = ba_dt[, .SD[1], .(ROI, GROUP)],
+      aes(yintercept = CI_high),
+      colour = cbPalette[3], linetype = "dashed", alpha = .7
+    ) +
+    geom_text(
+      data = ba_dt[, .SD[1], GROUP],
+      aes(x = 1.2, y = CI_high, label = round(CI_high, 2)),
+      nudge_y = .1, size = 2.5
+    ) +
+    xlim(.95, 6.2) +
+    facet_grid(rows = vars(ROI), cols = vars(GROUP), scales = "free") +
+    labs(
+      x = "Mean computed & manual volumes",
+      y = "Computed - manual volumes"
+    )
+}
 ```
+
+\newpage
 
 ### Figure S4: Permutation tests - MALF {.unnumbered}
 
 ```{r}
 #| label: fig-s4
-#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using MALF segmentations.** Distributions of the differences in Spearman's rank correlation coefficients (Δρ = ρ(HCvol) − ρ(HVR)) with respect to age, memory, and global cognition. The hypothesis tested is that the MALF-based HVR measure yields stronger correlations in magnitude than the MALF-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis (α < 0.05). Vertical lines mark the observed Δρ; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using MALF segmentations.** Distributions of the differences in Spearman's rank correlation coefficients ($\\Delta\\rho$ = $\\rho$(HCvol) - $\\rho$(HVR)) with respect to age, memory, and global cognition. The hypothesis tested is that the MALF-based HVR measure yields stronger correlations in magnitude than the MALF-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\\alpha$ < 0.05). Vertical lines mark the observed $\\Delta\\rho$; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 # Check for pre-computed permutation results
 perms_rds <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
@@ -1581,11 +2022,12 @@ if (file.exists(perms_rds)) {
     ]
 
     ggplot(subDT, aes(x = P_diff, y = DX)) +
-      theme_classic(base_size = 11) +
+      theme_classic(base_size = 9) +
       theme(
-        text = element_text(size = 11),
+        text = element_text(size = 9),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
+        strip.text = element_text(size = 10),
         legend.position = "none"
       ) +
       facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
@@ -1635,13 +2077,15 @@ if (file.exists(perms_rds)) {
 }
 ```
 
+\newpage
+
 ### Figure S5: Permutation tests - NLPB {.unnumbered}
 
 ```{r}
 #| label: fig-s5
-#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using NLPB segmentations.** Distributions of the differences in Spearman's rank correlation coefficients (Δρ = ρ(HCvol) − ρ(HVR)) with respect to age, memory, and global cognition."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using NLPB segmentations.** Distributions of the differences in Spearman's rank correlation coefficients ($\\Delta\\rho$ = $\\rho$(HCvol) - $\\rho$(HVR)) with respect to age, memory, and global cognition. The hypothesis tested is that the NLPB-based HVR measure yields stronger correlations in magnitude than the NLPB-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\\alpha$ < 0.05). Vertical lines mark the observed $\\Delta\\rho$; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 perms_rds <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
 fig_path <- here("quarto/figures/fig-s5.png")
@@ -1664,8 +2108,8 @@ if (file.exists(perms_rds)) {
     ]
 
     ggplot(subDT, aes(x = P_diff, y = DX)) +
-      theme_classic(base_size = 11) +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), legend.position = "none") +
+      theme_classic(base_size = 9) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text = element_text(size = 10), legend.position = "none") +
       facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
       scale_fill_manual(values = cb_palette[2:1]) +
       stat_density_ridges(aes(fill = factor(after_stat(quantile))), data = subDT[!"Memory", on = "COVAR"],
@@ -1689,13 +2133,15 @@ if (file.exists(perms_rds)) {
 }
 ```
 
+\newpage
+
 ### Figure S6: Permutation tests - CNN {.unnumbered}
 
 ```{r}
 #| label: fig-s6
-#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using CNN segmentations.** Distributions of the differences in Spearman's rank correlation coefficients (Δρ = ρ(HCvol) − ρ(HVR)) with respect to age, memory, and global cognition."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using CNN segmentations.** Distributions of the differences in Spearman's rank correlation coefficients ($\\Delta\\rho$ = $\\rho$(HCvol) - $\\rho$(HVR)) with respect to age, memory, and global cognition. The hypothesis tested is that the CNN-based HVR measure yields stronger correlations in magnitude than the CNN-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\\alpha$ < 0.05). Vertical lines mark the observed $\\Delta\\rho$; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 perms_rds <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
 fig_path <- here("quarto/figures/fig-s6.png")
@@ -1718,8 +2164,8 @@ if (file.exists(perms_rds)) {
     ]
 
     ggplot(subDT, aes(x = P_diff, y = DX)) +
-      theme_classic(base_size = 11) +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), legend.position = "none") +
+      theme_classic(base_size = 9) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text = element_text(size = 10), legend.position = "none") +
       facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
       scale_fill_manual(values = cb_palette[2:1]) +
       stat_density_ridges(aes(fill = factor(after_stat(quantile))), data = subDT[!"Memory", on = "COVAR"],
@@ -1743,13 +2189,15 @@ if (file.exists(perms_rds)) {
 }
 ```
 
+\newpage
+
 ### Figure S7: Permutation tests - FreeSurfer {.unnumbered}
 
 ```{r}
 #| label: fig-s7
-#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using FreeSurfer segmentations.** Distributions of the differences in Spearman's rank correlation coefficients (Δρ = ρ(HCvol) − ρ(HVR)) with respect to age, memory, and global cognition."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Permutation tests for differences in correlation strength between HCvol and HVR using FreeSurfer segmentations.** Distributions of the differences in Spearman's rank correlation coefficients ($\\Delta\\rho$ = $\\rho$(HCvol) - $\\rho$(HVR)) with respect to age, memory, and global cognition. The hypothesis tested is that the FreeSurfer-based HVR measure yields stronger correlations in magnitude than the FreeSurfer-based HCvol measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\\alpha$ < 0.05). Vertical lines mark the observed $\\Delta\\rho$; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 perms_rds <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
 fig_path <- here("quarto/figures/fig-s7.png")
@@ -1772,8 +2220,8 @@ if (file.exists(perms_rds)) {
     ]
 
     ggplot(subDT, aes(x = P_diff, y = DX)) +
-      theme_classic(base_size = 11) +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), legend.position = "none") +
+      theme_classic(base_size = 9) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text = element_text(size = 10), legend.position = "none") +
       facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
       scale_fill_manual(values = cb_palette[2:1]) +
       stat_density_ridges(aes(fill = factor(after_stat(quantile))), data = subDT[!"Memory", on = "COVAR"],
@@ -1797,13 +2245,15 @@ if (file.exists(perms_rds)) {
 }
 ```
 
+\newpage
+
 ### Figure S8: Permutation tests - CNN vs FreeSurfer HVR {.unnumbered}
 
 ```{r}
 #| label: fig-s8
-#| fig-cap: "**Permutation tests for differences in correlation strength of HVR between CNN and FreeSurfer segmentations.** Distributions of the differences in Spearman's rank correlation coefficients (Δρ = ρ(CNN) − ρ(FS)) with respect to age, memory, and global cognition."
-#| fig-width: 8
-#| fig-height: 7
+#| fig-cap: "**Permutation tests for differences in correlation strength of HVR between CNN and FreeSurfer segmentations.** Distributions of the differences in Spearman's rank correlation coefficients ($\\Delta\\rho$ = $\\rho$(CNN) - $\\rho$(FS)) with respect to age, memory, and global cognition. The hypothesis tested is that the CNN-based HVR measure yields stronger correlations in magnitude than the FreeSurfer-based HVR measure. Each distribution was obtained via 10,000 one-tailed permutation tests; shaded orange area represents the region of rejection of the null hypothesis ($\\alpha$ < 0.05). Vertical lines mark the observed $\\Delta\\rho$; solid and red when significant, black and dashed when not. FDR-corrected p-values are provided as labels."
+#| fig-width: 6.5
+#| fig-height: 5.7
 
 perms_rds <- here("data/rds/adni-bl_hcv-hvr_corrs_non-parametric.rds")
 fig_path <- here("quarto/figures/fig-s8.png")
@@ -1826,8 +2276,8 @@ if (file.exists(perms_rds)) {
     ]
 
     ggplot(subDT, aes(x = P_diff, y = DX)) +
-      theme_classic(base_size = 11) +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), legend.position = "none") +
+      theme_classic(base_size = 9) +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), strip.text = element_text(size = 10), legend.position = "none") +
       facet_grid(rows = vars(DX), cols = vars(COVAR), scales = "free_y") +
       scale_fill_manual(values = cb_palette[2:1]) +
       stat_density_ridges(aes(fill = factor(after_stat(quantile))), data = subDT[!"Memory", on = "COVAR"],

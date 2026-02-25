@@ -2,7 +2,7 @@
 
 library(gt)
 library(officer)
-library(gto)
+# library(gto)
 library(jsonlite)
 library(here)
 

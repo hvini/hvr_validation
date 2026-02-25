@@ -34,7 +34,7 @@ execute:
 knitr:
   opts_chunk:
     fig.path: "figures_generated/"
-    fig.width: 8
-    fig.height: 6
+    fig.width: 6.5
+    fig.height: 4.5
     dpi: 300
-    dev: "png"
+    dev: "cairo_pdf"
