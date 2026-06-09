@@ -19,10 +19,6 @@ RUN apt-get update && apt-get install -y imagemagick
 # Copy files
 COPY . /app
 
-RUN sed -i 's/cpu=True/cpu=False/g' /app/cnn/cnn_hcvc.py
-
-RUN sed -i 's/torch.load(params.model)/torch.load(params.model, weights_only=False)/g' /app/cnn/apply_segm_model.py
-
 # Set environment variable for Python module path
 ENV PYTHONPATH=/app/..
 

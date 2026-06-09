@@ -5,13 +5,13 @@
 # @date 20/11/2024
 import argparse
 import csv
+import torch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from tqdm import tqdm
 from warnings import warn
 from cnn.cnn_hcvc import CNN_HCVC
 from minc.minc_calc_hvr import extract_hvr_from_img
-
 
 def parse_csv(file_path, has_header, header_mapping=None):
     """
@@ -254,11 +254,13 @@ def main(args):
                 }
                 subjects.append(subject)
 
+        CPU = not torch.cuda.is_available()
         # Initialize CNN_HCVC
         hcvc_segmenter = CNN_HCVC(
             model=args.model,
             work_dir=work_dir,
             clobber=args.clobber,
+            cpu=CPU
         )
 
         # Initialization of output directories and files

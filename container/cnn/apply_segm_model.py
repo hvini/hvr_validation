@@ -94,7 +94,7 @@ def apply_cnn_segmentation(params):
     and save the result to an output file.
     """
     # Load the pre-trained model
-    model = torch.load(params.model)
+    model = torch.load(params.model, weights_only=False)
     if params.cpu:
         model.cpu()
     else:
